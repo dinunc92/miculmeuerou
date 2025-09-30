@@ -1,0 +1,25 @@
+stripe login
+stripe listen --forward-to localhost:3000/api/webhooks/stripe
+
+whsec_c03d0d190b0a1036782ab1fbebefeb63593db94ce1aea6384612691ebc98b5c6 
+
+4242 4242 4242 4242 — dată viitoare/ CVC/ orice nume & adresă
+
+
+Ca să ajungă emailurile la clienți (nu în spam), verifică domeniul:
+
+Resend → Domains → Add Domain: miculmeuerou.ro
+
+adaugă în DNS (la providerul tău) înregistrările DKIM/SPF/Return-Path pe care ți le dă Resend
+
+după propagare (de obicei câteva minute), domeniul devine „Verified”
+
+Până verifici domeniul, emailurile pot să nu se livreze către adrese externe. 
+Pentru testare, poți trimite către o adresă de-ale tale, dar recomand verificarea domeniului.
+
+Varianta producție (mai târziu)
+
+Stripe Dashboard → Developers → Webhooks → Add endpoint
+Endpoint: https://miculmeuerou.ro/api/webhooks/stripe
+Event: checkout.session.completed
+Copiază whsec_... în env-ul de producție (Vercel/host).
