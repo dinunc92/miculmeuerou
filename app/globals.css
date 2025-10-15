@@ -2,10 +2,73 @@
 @tailwind components;
 @tailwind utilities;
 
-html, body { @apply bg-white text-brand-dark antialiased; }
+/* Reseturi ușoare */
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { @apply bg-white text-brand-dark antialiased; }
 
-.btn-cta { @apply rounded-2xl px-6 py-3 font-semibold shadow-soft transition-transform hover:-translate-y-0.5 hover:shadow-lg; }
+/* Layout helpers */
+.container-lg { @apply mx-auto max-w-6xl px-4; }
+
+/* Card & efecte hover */
 .card { @apply rounded-2xl bg-white shadow-soft border border-gray-100; }
 .hover-pop { @apply transition-transform duration-200 hover:-translate-y-1 hover:shadow-lg; }
 
-a { @apply transition-opacity hover:opacity-80; }
+/* Buton CTA gradient mov→turcoaz */
+.btn-cta {
+  @apply rounded-2xl px-6 py-3 font-semibold text-white shadow-soft transition-transform;
+  @apply bg-gradient-to-r from-brand-lilac to-brand-turquoise;
+}
+.btn-cta:hover { @apply -translate-y-0.5 shadow-lg; }
+.btn-cta:active { transform: translateY(0); }
+
+/* Variante buton „ghost” & neutră */
+.btn-ghost { @apply rounded-2xl px-6 py-3 font-semibold bg-gray-100 text-gray-900 transition hover:bg-gray-200; }
+.btn-neutral { @apply rounded-2xl px-6 py-3 font-semibold border border-gray-200 bg-white hover:bg-gray-50; }
+
+/* Linkuri */
+a { @apply transition-opacity; }
+a:hover { @apply opacity-80; }
+
+/* Formular */
+input, select, textarea { @apply rounded-xl border border-gray-300 px-3 py-2 outline-none transition; }
+input:focus, select:focus, textarea:focus { @apply ring-2 ring-brand-turquoise/40 border-brand-turquoise/60; }
+
+/* Titluri secțiuni */
+.section-title { @apply text-3xl font-bold; }
+
+/* Badge coș */
+.badge {
+  @apply text-xs bg-brand-turquoise text-white rounded-full px-2 py-0.5;
+}
+
+/* Gradiente de fundal (dacă vrei să le folosești per secțiune) */
+.bg-soft-gradient { @apply bg-gradient-to-br from-brand-turquoise/10 to-brand-lilac/10; }
+.bg-strong-gradient { @apply bg-gradient-to-br from-brand-turquoise/25 via-white to-brand-lilac/25; }
+
+/* Navbar */
+.nav-link { @apply hover:underline; }
+.nav-link-active { @apply text-brand-turquoise; }
+
+/* Tichete „Cum funcționează” (carduri mai „pop”) */
+.ticket {
+  @apply card p-6 relative overflow-hidden;
+}
+.ticket::after {
+  content: "";
+  position: absolute; inset: -20%;
+  background: radial-gradient(circle at 20% 20%, rgba(100,216,223,0.12), transparent 40%),
+              radial-gradient(circle at 80% 80%, rgba(181,138,215,0.12), transparent 40%);
+  z-index: 0;
+}
+.ticket > * { position: relative; z-index: 1; }
+
+/* Imagini produs hover highlight */
+.product-thumb { @apply rounded-xl aspect-[4/3] object-contain transition-transform; }
+.product-thumb:hover { transform: scale(1.02); }
+
+/* Utilitare mici */
+.text-dim { @apply text-gray-600; }
+.shadow-soft { box-shadow: 0 10px 20px rgba(0,0,0,0.08); }
+
+select { @apply bg-white relative z-10; }

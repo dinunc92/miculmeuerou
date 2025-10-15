@@ -1,6 +1,9 @@
 stripe login
 stripe listen --forward-to localhost:3000/api/webhooks/stripe
 
+--corect
+stripe listen --forward-to 127.0.0.1:3000/api/stripe/webhook
+
 whsec_c03d0d190b0a1036782ab1fbebefeb63593db94ce1aea6384612691ebc98b5c6 
 
 4242 4242 4242 4242 — dată viitoare/ CVC/ orice nume & adresă
