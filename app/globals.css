@@ -2,73 +2,154 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Reseturi ușoare */
-* { box-sizing: border-box; }
-html, body { height: 100%; }
-body { @apply bg-white text-brand-dark antialiased; }
+/* ======== Brand Colors ======== */
+:root {
+  --brand-turquoise: #30d5c8; /* turcoaz deschis */
+  --brand-lilac: #b784f7;     /* mov-lila */
+  --brand-dark: #1e293b;
+}
 
-/* Layout helpers */
-.container-lg { @apply mx-auto max-w-6xl px-4; }
+/* ======== Body & Background ======== */
+body {
+  @apply text-gray-900 font-sans;
+  background: linear-gradient(
+    135deg,
+    rgba(48, 213, 200, 0.25) 0%,
+    rgba(183, 132, 247, 0.25) 100%
+  );
+  background-attachment: fixed;
+}
 
-/* Card & efecte hover */
-.card { @apply rounded-2xl bg-white shadow-soft border border-gray-100; }
-.hover-pop { @apply transition-transform duration-200 hover:-translate-y-1 hover:shadow-lg; }
+/* ======== General Links ======== */
+a {
+  @apply transition duration-150 ease-in-out;
+}
+a:hover {
+  text-decoration: underline;
+  filter: brightness(1.1);
+}
 
-/* Buton CTA gradient mov→turcoaz */
+/* Evidențiere pe hover (link-uri, iconițe etc.) */
+.link-strong {
+  @apply rounded-lg transition duration-150 ease-in-out;
+}
+.link-strong:hover {
+  @apply bg-black/5;
+}
+
+/* ======== Nav Links ======== */
+.nav-link {
+  @apply px-3 py-2 rounded-xl text-gray-700 font-medium transition;
+}
+.nav-link:hover {
+  @apply bg-black/10 text-[var(--brand-turquoise)] shadow-sm;
+}
+.nav-link-active {
+  @apply bg-[rgba(48,213,200,0.2)] text-[var(--brand-turquoise)] font-semibold;
+}
+
+/* ======== Brand Pill (logo “micul meu erou”) ======== */
+.brand-pill {
+  @apply rounded-2xl px-4 py-2 font-extrabold text-white shadow transition;
+  background-image: linear-gradient(
+    to right,
+    var(--brand-turquoise),
+    var(--brand-lilac)
+  );
+}
+.brand-pill:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* ======== Buttons ======== */
 .btn-cta {
-  @apply rounded-2xl px-6 py-3 font-semibold text-white shadow-soft transition-transform;
-  @apply bg-gradient-to-r from-brand-lilac to-brand-turquoise;
+  @apply inline-flex items-center justify-center rounded-xl px-4 py-2 font-semibold transition shadow-sm;
+  background-image: linear-gradient(
+    to right,
+    var(--brand-turquoise),
+    var(--brand-lilac)
+  );
+  color: white;
 }
-.btn-cta:hover { @apply -translate-y-0.5 shadow-lg; }
-.btn-cta:active { transform: translateY(0); }
-
-/* Variante buton „ghost” & neutră */
-.btn-ghost { @apply rounded-2xl px-6 py-3 font-semibold bg-gray-100 text-gray-900 transition hover:bg-gray-200; }
-.btn-neutral { @apply rounded-2xl px-6 py-3 font-semibold border border-gray-200 bg-white hover:bg-gray-50; }
-
-/* Linkuri */
-a { @apply transition-opacity; }
-a:hover { @apply opacity-80; }
-
-/* Formular */
-input, select, textarea { @apply rounded-xl border border-gray-300 px-3 py-2 outline-none transition; }
-input:focus, select:focus, textarea:focus { @apply ring-2 ring-brand-turquoise/40 border-brand-turquoise/60; }
-
-/* Titluri secțiuni */
-.section-title { @apply text-3xl font-bold; }
-
-/* Badge coș */
-.badge {
-  @apply text-xs bg-brand-turquoise text-white rounded-full px-2 py-0.5;
+.btn-cta:hover {
+  filter: brightness(1.08);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
+}
+.btn-cta:active {
+  transform: translateY(1px);
 }
 
-/* Gradiente de fundal (dacă vrei să le folosești per secțiune) */
-.bg-soft-gradient { @apply bg-gradient-to-br from-brand-turquoise/10 to-brand-lilac/10; }
-.bg-strong-gradient { @apply bg-gradient-to-br from-brand-turquoise/25 via-white to-brand-lilac/25; }
-
-/* Navbar */
-.nav-link { @apply hover:underline; }
-.nav-link-active { @apply text-brand-turquoise; }
-
-/* Tichete „Cum funcționează” (carduri mai „pop”) */
-.ticket {
-  @apply card p-6 relative overflow-hidden;
+.btn-neutral {
+  @apply bg-white text-gray-800 border border-gray-200 rounded-xl font-medium transition;
 }
-.ticket::after {
-  content: "";
-  position: absolute; inset: -20%;
-  background: radial-gradient(circle at 20% 20%, rgba(100,216,223,0.12), transparent 40%),
-              radial-gradient(circle at 80% 80%, rgba(181,138,215,0.12), transparent 40%);
-  z-index: 0;
+.btn-neutral:hover {
+  @apply bg-gray-50;
 }
-.ticket > * { position: relative; z-index: 1; }
 
-/* Imagini produs hover highlight */
-.product-thumb { @apply rounded-xl aspect-[4/3] object-contain transition-transform; }
-.product-thumb:hover { transform: scale(1.02); }
+/* ======== Generic Cards ======== */
+.card {
+  @apply rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition;
+}
 
-/* Utilitare mici */
-.text-dim { @apply text-gray-600; }
-.shadow-soft { box-shadow: 0 10px 20px rgba(0,0,0,0.08); }
+/* ======== Inputs & Forms ======== */
+input,
+select,
+textarea {
+  @apply w-full border border-gray-300 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--brand-turquoise)];
+}
+label {
+  @apply font-medium text-gray-700;
+}
 
-select { @apply bg-white relative z-10; }
+/* ======== Small icons (for “Fișe / Cărți”) ======== */
+.icon-sm {
+  width: 18px;
+  height: 18px;
+  display: inline-block;
+  vertical-align: -2px;
+}
+
+/* ======== Utility Text/Background ======== */
+.text-brand {
+  color: var(--brand-turquoise);
+}
+.bg-brand {
+  background-color: var(--brand-turquoise);
+}
+.bg-brand-gradient {
+  background-image: linear-gradient(
+    90deg,
+    var(--brand-turquoise),
+    var(--brand-lilac)
+  );
+}
+
+/* ======== Reviews Section ======== */
+.review-icon {
+  @apply text-xl text-[var(--brand-turquoise)] transition;
+}
+.review-icon:hover {
+  filter: brightness(1.3);
+  transform: scale(1.1);
+}
+
+/* ======== Footer ======== */
+footer a {
+  @apply text-gray-600;
+}
+footer a:hover {
+  color: var(--brand-turquoise);
+}
+
+/* ======== Responsive Helpers ======== */
+@media (max-width: 640px) {
+  .brand-pill {
+    font-size: 1rem;
+    padding: 0.4rem 0.9rem;
+  }
+  .btn-cta {
+    font-size: 0.9rem;
+  }
+}

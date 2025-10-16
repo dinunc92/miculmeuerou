@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { useCart } from "@/lib/store/cart";
 
 function isActive(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
@@ -9,12 +10,7 @@ function isActive(pathname: string, href: string) {
 }
 
 const NavLink = ({ href, children, active }: { href: string; children: React.ReactNode; active: boolean }) => (
-  <Link
-    href={href}
-    className={`px-3 py-2 rounded-xl transition ${
-      active ? "bg-brand-turquoise/15 text-brand-turquoise font-semibold" : "hover:bg-black/5"
-    }`}
-  >
+  <Link href={href} className={`nav-link ${active ? "nav-link-active" : ""} link-strong`}>
     {children}
   </Link>
 );
@@ -23,38 +19,53 @@ export default function Navbar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
+  // ❗ FIX: hook-ul se apelează necondiționat într-un component
+  const count = useCart((s: any) => s.count());
+
   return (
     <header className="sticky top-0 z-40 border-b bg-white/90 backdrop-blur">
-      <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between">
-        {/* Buton „acasă” vizibil */}
-        <Link
-          href="/"
-          className="rounded-2xl px-4 py-2 font-extrabold text-white bg-gradient-to-r from-brand-turquoise to-brand-lilac shadow hover:shadow-md active:scale-[0.98] transition"
-          aria-label="Micul Meu Erou - acasă"
-        >
-          micul meu erou
+      <div className="mx-auto max-w-6xl px-4 py-3 flex items-center gap-4">
+        {/* LOGO stânga */}
+        <Link href="/" className="flex items-center gap-2 brand-pill" aria-label="Micul Meu Erou - acasă">
+          <img src="/logo-icon.svg" alt="" className="w-5 h-5" />
+          <img src="/logo.svg" alt="Micul Meu Erou" className="h-5 w-auto" />
         </Link>
 
-        {/* Desktop nav */}
+        {/* Meniu principal mutat la STÂNGA (imediat după logo) */}
         <nav className="hidden md:flex items-center gap-2">
-          <NavLink href="/fise" active={isActive(pathname, "/fise")}>Fișe</NavLink>
-          <NavLink href="/carti" active={isActive(pathname, "/carti")}>Cărți</NavLink>
+          <NavLink href="/fise" active={isActive(pathname, "/fise")}>
+            <span className="icon-sm" aria-hidden>📄</span> Fișe
+          </NavLink>
+          <NavLink href="/carti" active={isActive(pathname, "/carti")}>
+            <span className="icon-sm" aria-hidden>📚</span> Cărți
+          </NavLink>
           <Link
-            href="/personalizeaza-cartea"
-            className={`px-3 py-2 rounded-xl transition font-extrabold ${
-              isActive(pathname, "/personalizeaza-cartea")
-                ? "bg-brand-turquoise/15 text-brand-turquoise"
-                : "hover:bg-black/5"
-            }`}
+            href="/creeaza-carte"
+            className={`nav-link link-strong font-extrabold ${isActive(pathname, "/creeaza-carte") ? "nav-link-active" : ""}`}
+            title="Creează-ți cartea"
           >
-            Personalizează cartea eroului
+            ✨ Creează-ți cartea
           </Link>
-          <NavLink href="/intrebari-raspunsuri" active={isActive(pathname, "/intrebari-raspunsuri")}>Întrebări</NavLink>
-          <NavLink href="/contact" active={isActive(pathname, "/contact")}>Contact</NavLink>
-          <Link href="/cart" aria-label="Coș" className="px-3 py-2 rounded-xl hover:bg-black/5">🛒</Link>
         </nav>
 
-        {/* Mobile burger */}
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        {/* Dreapta: alte linkuri + coș */}
+        <nav className="hidden md:flex items-center gap-2">
+          <NavLink href="/intrebari-raspunsuri" active={isActive(pathname, "/intrebari-raspunsuri")}>Întrebări</NavLink>
+          <NavLink href="/contact" active={isActive(pathname, "/contact")}>Contact</NavLink>
+          <Link href="/cart" aria-label="Coș" className="relative nav-link link-strong">
+            🛒
+            {count > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">
+                {count}
+              </span>
+            )}
+          </Link>
+        </nav>
+
+        {/* Burger mobile */}
         <button
           onClick={() => setOpen(!open)}
           className="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-xl hover:bg-black/5"
@@ -69,22 +80,18 @@ export default function Navbar() {
         </button>
       </div>
 
-      {/* Mobile drawer */}
+      {/* Drawer mobile */}
       {open && (
         <div className="md:hidden border-t bg-white">
           <div className="mx-auto max-w-6xl px-4 py-3 grid gap-1">
-            <NavLink href="/fise" active={isActive(pathname, "/fise")}>Fișe</NavLink>
-            <NavLink href="/carti" active={isActive(pathname, "/carti")}>Cărți</NavLink>
+            <NavLink href="/fise" active={isActive(pathname, "/fise")}>📄 Fișe</NavLink>
+            <NavLink href="/carti" active={isActive(pathname, "/carti")}>📚 Cărți</NavLink>
             <Link
-              href="/personalizeaza-cartea"
-              className={`px-3 py-2 rounded-xl transition font-extrabold ${
-                isActive(pathname, "/personalizeaza-cartea")
-                  ? "bg-brand-turquoise/15 text-brand-turquoise"
-                  : "hover:bg-black/5"
-              }`}
+              href="/creeaza-carte"
+              className={`nav-link link-strong font-extrabold ${isActive(pathname, "/creeaza-carte") ? "nav-link-active" : ""}`}
               onClick={() => setOpen(false)}
             >
-              Personalizează cartea eroului
+              ✨ Creează-ți cartea
             </Link>
             <NavLink href="/intrebari-raspunsuri" active={isActive(pathname, "/intrebari-raspunsuri")}>Întrebări</NavLink>
             <NavLink href="/contact" active={isActive(pathname, "/contact")}>Contact</NavLink>

@@ -16,13 +16,21 @@ type CartState = {
 function hash(i:Item){
   return `${i.productId}-${JSON.stringify(i.customization)}`;
 }
-export const useCart = create<CartState>((set,get)=>({
+
+export const useCart = create<any>((set, get)=>({
   items: [],
-  add(i){
-    const key = hash(i); i.key = key;
-    if(get().items.find(x=>x.key===key)) return false;
-    set(s=>({items:[...s.items, i]})); return true;
+  add: (i:any)=>{
+    const items = get().items;
+    const exists = items.some((x:any)=> JSON.stringify(x) === JSON.stringify(i));
+    if (exists) return false;
+    set({ items: [...items, i] });
+    return true;
   },
-  remove(key){ set(s=>({items:s.items.filter(x=>x.key!==key)})); },
-  clear(){ set({items:[]}); }
+  remove: (idx:number)=>{
+    const items = get().items.slice();
+    items.splice(idx,1);
+    set({ items });
+  },
+  clear: ()=> set({ items: [] }),
+  count: ()=> get().items.length,
 }));

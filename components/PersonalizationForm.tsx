@@ -23,21 +23,25 @@ export default function PersonalizationForm({
 
   const isFise = product.type === "fise";
   const shownTitle = displayTitleFromPlaceholder(product.title, childName);
+  const [wantPrinted, setWantPrinted] = useState(false);
 
   const handleAdd = () => {
     if (!childName.trim()) return alert("Te rog introdu numele copilului.");
     if (!isFise && !hairstyle) return alert("Alege un caracter din grilă.");
-    const ok = add({
-      productId: product.id,
-      productType: product.type,
-      title: product.title,     // păstrăm cu [NumeCopil]
-      priceRON: product.priceRON,
-      image: product.image,
-      customization: {
-        childName: childName.slice(0,10),
-        ...(isFise ? {} : { gender, eye, hairstyle }),
-      },
-    });
+   
+// ... în handleAdd includem wantPrinted în customization
+const ok = add({
+  productId: product.id,
+  productType: product.type,
+  title: product.title,
+  priceRON: product.priceRON + (wantPrinted ? 79 : 0),
+  image: product.image,
+  customization: {
+    childName: childName.slice(0,10),
+    gender, eye, hairstyle,
+    wantPrinted,
+  },
+});
     if (!ok) return alert("Acest produs cu aceeași personalizare este deja în coș.");
     router.push("/cart");
   };
@@ -83,6 +87,11 @@ export default function PersonalizationForm({
 
             <label className="block text-sm font-medium">Alege caracterul</label>
             <CharacterPicker gender={gender} eye={eye} value={hairstyle} onChange={setHairstyle} />
+            <label className="flex items-center gap-2">
+  <input type="checkbox" checked={wantPrinted} onChange={e=>setWantPrinted(e.target.checked)} />
+  <span>Vreau și varianta tipărită (+79 RON) + transport</span>
+</label>
+<div className="text-xs text-gray-500">Livrare (varianta tipărită): 5–7 zile lucrătoare.</div>
           </div>
         )}
 

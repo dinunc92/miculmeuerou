@@ -1,0 +1,16 @@
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Micul meu erou - icon flat">
+  <!-- carte albă cu contur mov -->
+  <g transform="translate(32,48)">
+    <ellipse cx="96" cy="144" rx="84" ry="10" fill="#000" opacity="0.05"/>
+    <path d="M4,16c0-9,7-16,16-16h84c9,0,16,7,16,16v112c-18-9-36-13-56-13s-38,4-56,13V16z"
+          fill="#ffffff" stroke="#633c9e" stroke-width="4"/>
+    <path d="M108,0h84c9,0,16,7,16,16v112c-18-9-36-13-56-13s-38,4-56,13V16c0-9,7-16,16-16z"
+          fill="#ffffff" stroke="#633c9e" stroke-width="4"/>
+    <path d="M116,16c-5,4-12,7-24,7s-19-3-24-7v92c5-4,12-7,24-7s19,3,24,7V16z"
+          fill="#f5f2ff" stroke="#633c9e" stroke-width="3"/>
+    <g stroke="#7e56c9" stroke-linecap="round" stroke-width="3" opacity=".65">
+      <path d="M24,44h64M24,64h58M24,84h54M24,104h58"/>
+      <path d="M132,44h64M136,64h58M140,84h54M136,104h58"/>
+    </g>
+  </g>
+</svg>

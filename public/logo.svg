@@ -1,4 +1,39 @@
-<svg width="120" height="40" viewBox="0 0 120 40" xmlns="http://www.w3.org/2000/svg">
-  <rect rx="8" width="120" height="40" fill="#64D8DF"/>
-  <text x="60" y="26" font-family="Arial" font-size="16" text-anchor="middle" fill="white">Micul Meu Erou</text>
+<svg width="540" height="100" viewBox="0 0 540 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Micul meu erou - logo">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#30d5c8"/>
+      <stop offset="100%" stop-color="#b784f7"/>
+    </linearGradient>
+    <linearGradient id="textGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#6b3fa0"/>
+      <stop offset="100%" stop-color="#b784f7"/>
+    </linearGradient>
+  </defs>
+
+  <!-- fundal oval turcoaz–lila -->
+  <rect x="0" y="0" rx="48" ry="48" width="540" height="100" fill="url(#bgGrad)" />
+
+  <!-- carte albă cu contur mov -->
+  <g transform="translate(36,16)">
+    <ellipse cx="72" cy="128" rx="72" ry="10" fill="#000" opacity="0.05"/>
+    <path d="M0,16c0-9,7-16,16-16h76c9,0,16,7,16,16v92c-18-8-36-12-56-12s-38,4-56,12V16z"
+          fill="#ffffff" stroke="#633c9e" stroke-width="4"/>
+    <path d="M92,0h76c9,0,16,7,16,16v92c-18-8-36-12-56-12s-38,4-56,12V16c0-9,7-16,16-16z"
+          fill="#ffffff" stroke="#633c9e" stroke-width="4"/>
+    <path d="M100,16c-5,4-12,7-24,7s-19-3-24-7v80c5-4,12-7,24-7s19,3,24,7V16z"
+          fill="#f5f2ff" stroke="#633c9e" stroke-width="3"/>
+    <g stroke="#7e56c9" stroke-linecap="round" stroke-width="3" opacity=".65">
+      <path d="M20,40h58M20,60h54M20,80h50"/>
+      <path d="M116,40h58M120,60h54M120,80h50"/>
+    </g>
+  </g>
+
+  <!-- text -->
+  <text x="190" y="63"
+        font-family="Poppins, system-ui, -apple-system, Segoe UI, Roboto, Arial"
+        font-weight="800" font-size="36"
+        fill="url(#textGrad)"
+        stroke="#ffffff" stroke-width="2" paint-order="stroke">
+    Micul meu erou
+  </text>
 </svg>

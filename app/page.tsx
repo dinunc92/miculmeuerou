@@ -19,8 +19,11 @@ export default function Home() {
           Micul tău erou, în fișe, <strong>cărți</strong> și povești animate.
         </p>
         <div className="mt-8 flex items-center justify-center gap-4">
-          <Link href="/fise" className="btn-cta bg-brand-turquoise text-white">Fișe personalizate</Link>
-          <Link href="/carti" className="btn-cta bg-brand-lilac text-white">Cărți personalizate</Link>
+          <div className="mt-6 flex flex-wrap gap-3">
+          <Link href="/fise" className="btn-cta">📄 Fișe</Link>
+          <Link href="/carti" className="btn-cta">📚 Cărți</Link>
+          <Link href="/creeaza-carte" className="btn-cta">✨ Creează-ți cartea</Link>
+        </div>
         </div>
       </section>
 

@@ -36,8 +36,7 @@ export default function SuccessPage() {
       {/* Banner informativ */}
       {!loading && haveAll === false && (
         <div className="mt-6 rounded-xl border border-yellow-300 bg-yellow-50 text-yellow-900 p-4 text-sm">
-          <b>Comanda ta este în curs de pregătire.</b><br/>
-          Unele fișiere personalizate nu sunt încă disponibile. Le finalizăm și îți vom trimite pe email cât mai curând.
+          <b>  Comanda ta este în curs de pregătire. Vei primi pe email produsele comandate imediat ce sunt gata.</b><br/>
         </div>
       )}
 
