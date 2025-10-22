@@ -1,55 +1,81 @@
 "use client";
-import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
 
-export default function SuccessPage() {
-  const sp = useSearchParams();
-  const sessionId = sp.get("session_id");
-  const [loading, setLoading] = useState(!!sessionId);
-  const [haveAll, setHaveAll] = useState<boolean | null>(null);
+type OrderItemDTO = {
+  id: string;
+  title: string;
+  productId: string;
+  type: "carte" | "fise" | "carte-custom";
+  childName?: string | null;
+};
 
-  useEffect(()=>{
-    const run = async ()=>{
-      if(!sessionId) return;
-      try{
-        const res = await fetch(`/api/checkout-status?session_id=${sessionId}`);
-        const data = await res.json();
-        if(!res.ok) throw new Error(data?.error || "status error");
-        setHaveAll(!!data.haveAll);
-      }catch{
-        setHaveAll(null); // dacă nu putem verifica, nu afișăm banner
-      }finally{
+export default function SuccessPage({ searchParams }: { searchParams: { sid?: string } }) {
+  const sid = searchParams?.sid || "";
+  const [items, setItems] = useState<OrderItemDTO[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!sid) return;
+    (async () => {
+      try {
+        const r = await fetch(`/api/order-files?sid=${encodeURIComponent(sid)}`);
+        const data = await r.json();
+        setItems(data.items || []);
+      } finally {
         setLoading(false);
       }
-    };
-    run();
-  }, [sessionId]);
+    })();
+  }, [sid]);
+
+  const download = async (it: OrderItemDTO) => {
+    if (it.type === "carte-custom") {
+      alert("Cartea din fotografie va fi livrată pe email în maximum 2 zile lucrătoare.");
+      return;
+    }
+    const res = await fetch("/api/personalize", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        slug: it.productId, // presupunem că productId == slug (ajustează dacă e diferit)
+        type: it.type,
+        childName: it.childName || "Edy",
+        title: it.title,
+      }),
+    });
+    const blob = await res.blob();
+    const u = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = u;
+    a.download = `${it.title}.pdf`;
+    a.click();
+    URL.revokeObjectURL(u);
+  };
+
+  if (!sid) return <div className="max-w-3xl mx-auto px-4 py-14">Sesiune Stripe lipsă.</div>;
+  if (loading) return <div className="max-w-3xl mx-auto px-4 py-14">Se încarcă…</div>;
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-16 text-center">
-      <h1 className="text-3xl font-extrabold mb-2">Mulțumim! 🎉</h1>
-      <p className="text-gray-700">
-        Plata a fost procesată. Am început pregătirea personalizărilor.
+    <div className="max-w-3xl mx-auto px-4 py-14">
+      <h1 className="text-2xl font-bold">Comanda ta este în curs de pregătire</h1>
+      <p className="text-gray-700 mt-2">
+        Poți descărca aici fișierele digitale. Pentru varianta tipărită, livrarea este 5–7 zile lucrătoare.
       </p>
 
-      {/* Banner informativ */}
-      {!loading && haveAll === false && (
-        <div className="mt-6 rounded-xl border border-yellow-300 bg-yellow-50 text-yellow-900 p-4 text-sm">
-          <b>  Comanda ta este în curs de pregătire. Vei primi pe email produsele comandate imediat ce sunt gata.</b><br/>
-        </div>
-      )}
-
-      {!loading && haveAll === true && (
-        <div className="mt-6 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-900 p-4 text-sm">
-          <b>Gata!</b> Fișierele personalizate au fost generate și trimise pe email.
-        </div>
-      )}
-
-      <div className="mt-8 flex items-center justify-center gap-3">
-        <Link href="/" className="btn-cta btn-neutral">Înapoi la prima pagină</Link>
-        <Link href="/fise" className="btn-cta">Comandă alte fișe</Link>
+      <div className="mt-6 space-y-3">
+        {items.map((it) => (
+          <div key={it.id} className="flex items-center justify-between p-3 rounded-xl border bg-white/70">
+            <div>
+              <div className="font-semibold">{it.title}</div>
+              {it.childName ? <div className="text-sm text-gray-600">Pentru {it.childName}</div> : null}
+            </div>
+            <button className="btn-cta" onClick={() => download(it)}>
+              {it.type === "carte-custom" ? "Va sosi în 2 zile" : "Descarcă PDF"}
+            </button>
+          </div>
+        ))}
       </div>
+
+      <a href="/" className="btn-neutral mt-8 inline-block">Înapoi la pagina principală</a>
     </div>
   );
 }

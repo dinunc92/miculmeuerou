@@ -1,4 +1,6 @@
+// components/Navbar.tsx
 "use client";
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -9,8 +11,22 @@ function isActive(pathname: string, href: string) {
   return pathname.startsWith(href);
 }
 
-const NavLink = ({ href, children, active }: { href: string; children: React.ReactNode; active: boolean }) => (
-  <Link href={href} className={`nav-link ${active ? "nav-link-active" : ""} link-strong`}>
+const NavLink = ({
+  href,
+  children,
+  active,
+  onClick,
+}: {
+  href: string;
+  children: React.ReactNode;
+  active: boolean;
+  onClick?: () => void;
+}) => (
+  <Link
+    href={href}
+    onClick={onClick}
+    className={`nav-link ${active ? "nav-link-active" : ""} link-strong`}
+  >
     {children}
   </Link>
 );
@@ -19,19 +35,18 @@ export default function Navbar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
-  // ❗ FIX: hook-ul se apelează necondiționat într-un component
-  const count = useCart((s: any) => s.count());
+  // ✅ folosim items.length din store, nu s.count()
+  const count = useCart((s: any) => (Array.isArray(s.items) ? s.items.length : 0));
 
   return (
-    <header className="sticky top-0 z-40 border-b bg-white/90 backdrop-blur">
-      <div className="mx-auto max-w-6xl px-4 py-3 flex items-center gap-4">
-        {/* LOGO stânga */}
-        <Link href="/" className="flex items-center gap-2 brand-pill" aria-label="Micul Meu Erou - acasă">
-          <img src="/logo-icon.svg" alt="" className="w-5 h-5" />
-          <img src="/logo.svg" alt="Micul Meu Erou" className="h-5 w-auto" />
-        </Link>
+    <header className="bg-white/70 backdrop-blur border-b">
+      <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+        {/* Logo */}
+        <a href="/" className="flex items-center gap-3" aria-label="Acasă">
+          <img src="/logo-flat.svg" alt="Micul meu erou" className="h-10 md:h-12 w-auto" />
+        </a>
 
-        {/* Meniu principal mutat la STÂNGA (imediat după logo) */}
+        {/* Meniu principal (stânga, lângă logo) */}
         <nav className="hidden md:flex items-center gap-2">
           <NavLink href="/fise" active={isActive(pathname, "/fise")}>
             <span className="icon-sm" aria-hidden>📄</span> Fișe
@@ -51,25 +66,33 @@ export default function Navbar() {
         {/* Spacer */}
         <div className="flex-1" />
 
-        {/* Dreapta: alte linkuri + coș */}
+        {/* Dreapta: linkuri + coș */}
         <nav className="hidden md:flex items-center gap-2">
-          <NavLink href="/intrebari-raspunsuri" active={isActive(pathname, "/intrebari-raspunsuri")}>Întrebări</NavLink>
-          <NavLink href="/contact" active={isActive(pathname, "/contact")}>Contact</NavLink>
+          <NavLink href="/intrebari-raspunsuri" active={isActive(pathname, "/intrebari-raspunsuri")}>
+            Întrebări
+          </NavLink>
+          <NavLink href="/contact" active={isActive(pathname, "/contact")}>
+            Contact
+          </NavLink>
           <Link href="/cart" aria-label="Coș" className="relative nav-link link-strong">
             🛒
             {count > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">
+              <span
+                className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full"
+                aria-label={`${count} produse în coș`}
+              >
                 {count}
               </span>
             )}
           </Link>
         </nav>
 
-        {/* Burger mobile */}
+        {/* Burger (mobile) */}
         <button
           onClick={() => setOpen(!open)}
           className="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-xl hover:bg-black/5"
-          aria-label="Deschide meniul"
+          aria-label={open ? "Închide meniul" : "Deschide meniul"}
+          aria-expanded={open}
         >
           <span className="sr-only">Meniu</span>
           <div className="space-y-1.5">
@@ -84,8 +107,12 @@ export default function Navbar() {
       {open && (
         <div className="md:hidden border-t bg-white">
           <div className="mx-auto max-w-6xl px-4 py-3 grid gap-1">
-            <NavLink href="/fise" active={isActive(pathname, "/fise")}>📄 Fișe</NavLink>
-            <NavLink href="/carti" active={isActive(pathname, "/carti")}>📚 Cărți</NavLink>
+            <NavLink href="/fise" active={isActive(pathname, "/fise")} onClick={() => setOpen(false)}>
+              📄 Fișe
+            </NavLink>
+            <NavLink href="/carti" active={isActive(pathname, "/carti")} onClick={() => setOpen(false)}>
+              📚 Cărți
+            </NavLink>
             <Link
               href="/creeaza-carte"
               className={`nav-link link-strong font-extrabold ${isActive(pathname, "/creeaza-carte") ? "nav-link-active" : ""}`}
@@ -93,9 +120,15 @@ export default function Navbar() {
             >
               ✨ Creează-ți cartea
             </Link>
-            <NavLink href="/intrebari-raspunsuri" active={isActive(pathname, "/intrebari-raspunsuri")}>Întrebări</NavLink>
-            <NavLink href="/contact" active={isActive(pathname, "/contact")}>Contact</NavLink>
-            <NavLink href="/cart" active={isActive(pathname, "/cart")}>Coș 🛒</NavLink>
+            <NavLink href="/intrebari-raspunsuri" active={isActive(pathname, "/intrebari-raspunsuri")} onClick={() => setOpen(false)}>
+              Întrebări
+            </NavLink>
+            <NavLink href="/contact" active={isActive(pathname, "/contact")} onClick={() => setOpen(false)}>
+              Contact
+            </NavLink>
+            <NavLink href="/cart" active={isActive(pathname, "/cart")} onClick={() => setOpen(false)}>
+              Coș 🛒 {count > 0 ? `(${count})` : ""}
+            </NavLink>
           </div>
         </div>
       )}

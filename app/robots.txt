@@ -1,0 +1,8 @@
+export default function robots() {
+  return new Response(
+`User-agent: *
+Allow: /
+Sitemap: https://www.miculmeuerou.ro/sitemap.xml
+`, { headers: { "Content-Type": "text/plain" } }
+  );
+}

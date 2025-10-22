@@ -1,19 +1,21 @@
+// app/cart/page.tsx
 "use client";
 import { useCart } from "@/lib/store/cart";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-
 import { displayTitleFromPlaceholder } from "@/utils/title";
 
 function titleForCart(i: any){
-  const name = i.customization?.childName || "";
+  const name = i.customization?.childName || "Edy";
   return displayTitleFromPlaceholder(i.title, name);
 }
 
-
 export default function CartPage() {
-  const { items, remove } = useCart();
+  const { items, remove, clear } = useCart();
   const router = useRouter();
-  const total = items.reduce((s, i) => s + i.priceRON, 0);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
+  const total = items.reduce((s, i) => s + (i.priceRON || 0), 0);
 
   const checkout = async () => {
     try {
@@ -27,26 +29,24 @@ export default function CartPage() {
       if (!res.ok) throw new Error(data?.error || "Nu s-a putut porni plata.");
       if (data.url) window.location.href = data.url;
     } catch (e: any) {
-      alert(
-        e.message ||
-          "Nu s-a putut porni plata. Verifică prețurile Stripe în .env.local."
-      );
+      alert(e.message || "Nu s-a putut porni plata.");
     }
   };
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
       <h1 className="text-3xl font-bold mb-6">Coșul tău</h1>
-      {items.length === 0 && <p>Coșul este gol.</p>}
+
+      {items.length === 0 && (
+        <p>Coșul este gol.</p>
+      )}
+
       <div className="space-y-4">
         {items.map((i) => (
           <div key={i.key} className="card p-4 flex items-center justify-between">
             <div>
-              {/* AICI folosim titlul afișat corect */}
               <div className="font-semibold">{titleForCart(i)}</div>
-              <div className="text-sm text-gray-600">
-                {/* poți adăuga detalii dacă vrei */}
-              </div>
+              {/* Aici poți afișa detalii (gen/ochi/coafură) dacă vrei */}
             </div>
             <div className="flex items-center gap-4">
               <div className="font-bold">{i.priceRON} RON</div>
@@ -57,6 +57,7 @@ export default function CartPage() {
           </div>
         ))}
       </div>
+
       {items.length > 0 && (
         <div className="mt-6 flex items-center justify-between">
           <div className="text-xl font-bold">Total: {total} RON</div>

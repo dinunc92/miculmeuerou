@@ -1,36 +1,27 @@
-"use client";
+// lib/store/cart.ts
 import { create } from "zustand";
 
-type Item = {
-  productId:string; productType:"fise"|"carte";
-  title:string; priceRON:number;
-  customization:any;
-  key?: string; // hash to prevent duplicates
+type CartItem = {
+  key?: string;
+  productId: string;
+  productType: "carte"|"fise"|"carte-custom";
+  title: string;
+  priceRON: number;
+  customization?: any;
 };
 type CartState = {
-  items: Item[];
-  add: (i: Item) => boolean;
+  items: CartItem[];
+  add: (i: CartItem) => void;
   remove: (key: string) => void;
-  clear: ()=>void;
+  clear: () => void;
 };
-function hash(i:Item){
-  return `${i.productId}-${JSON.stringify(i.customization)}`;
-}
 
-export const useCart = create<any>((set, get)=>({
+export const useCart = create<CartState>((set) => ({
   items: [],
-  add: (i:any)=>{
-    const items = get().items;
-    const exists = items.some((x:any)=> JSON.stringify(x) === JSON.stringify(i));
-    if (exists) return false;
-    set({ items: [...items, i] });
-    return true;
-  },
-  remove: (idx:number)=>{
-    const items = get().items.slice();
-    items.splice(idx,1);
-    set({ items });
-  },
-  clear: ()=> set({ items: [] }),
-  count: ()=> get().items.length,
+  add: (i) => set((s) => {
+    const key = crypto.randomUUID();
+    return { items: [...s.items, { ...i, key }] };
+  }),
+  remove: (key) => set((s) => ({ items: s.items.filter(x => x.key !== key) })),
+  clear: () => set({ items: [] }),
 }));

@@ -1,41 +1,24 @@
 // app/api/webhooks/stripe/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { stripe } from "@/lib/stripe";
+import Stripe from "stripe";
+import { prisma } from "@/lib/prisma";
 import { resend, FROM } from "@/lib/resend";
-import {
-  personalizePdfSmart,
-  outputPdfName,
-  sourcePdfPath,
-  type PdfInfo,
-} from "@/lib/pdf_personalize";
-import { displayTitleFromPlaceholder } from "@/utils/title";
+import { byId } from "@/data/products";
+import { fillPdfFormAndBase64 } from "@/utils/pdf-form";
+import { PRICE } from "@/config/pricing";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-/**
- * Titluri de bază pentru generarea numelui fișierului-sursă.
- * Convenția din public/books/... folosește [NumeCopil] în titlu.
- */
-const BASE_TITLES: Record<string, string> = {
-  // CĂRȚI (au avatar => sursa are sufix _gender_hair_eye)
-  "carte-ziua": "Ziua lui [NumeCopil]",
-  "carte-numere": "[NumeCopil] învață să numere",
-  "carte-sentimente": "[NumeCopil] și cutia cu sentimente",
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2024-04-10" });
 
-  // FIȘE (fără avatar => sursa NU are sufix)
-  "fise-3-4": "Fișe educative 3-4 ani pentru [NumeCopil]",
-  "fise-4-5": "Fișe educative 4-5 ani pentru [NumeCopil]",
-  "fise-5-6": "Fișe educative 5-6 ani pentru [NumeCopil]",
-  "fise-cifre": "Fișe educative - cifrele pentru [NumeCopil]",
-};
-
-/** Trimitere email cu fallback dacă domeniul nu e verificat în Resend. */
-async function sendMail(payload: any) {
+// fallback dacă domeniul Resend nu e verificat (folosește onboarding@)
+async function sendMailSafe(payload: any) {
   try {
     return await resend.emails.send(payload);
   } catch (e: any) {
-    if (e?.statusCode === 403 && /domain is not verified/i.test(e?.message || "")) {
+    const msg = String(e?.message || "");
+    if (e?.statusCode === 403 && /domain is not verified/i.test(msg)) {
       return await resend.emails.send({
         ...payload,
         from: "Micul Meu Erou <onboarding@resend.dev>",
@@ -45,250 +28,230 @@ async function sendMail(payload: any) {
   }
 }
 
-/** Titlu frumos pentru un item (în corpul emailului, subiect etc.). */
-function prettyTitleForItem(it: any) {
-  const base = BASE_TITLES[it.productId] || it.title || it.productId;
-  const name = it.childName || it?.customization?.childName || "";
-  return displayTitleFromPlaceholder(base, name);
-}
-
-/** Trimite 2 emailuri per produs (client + admin) când PDF-ul a fost generat. */
-async function emailPerProductSuccess(args: {
-  emailClient: string;
-  adminTo: string | undefined;
-  item: any;
-  filename: string;
-  fileBase64: string;
-  shippingHtml: string;
-}) {
-  const { emailClient, adminTo, item, filename, fileBase64, shippingHtml } = args;
-  const title = prettyTitleForItem(item);
-
-  // 1) email către CLIENT cu 1 atașament (acest produs)
-  if (emailClient) {
-    await sendMail({
-      from: FROM,
-      to: emailClient,
-      subject: `Fișierul tău: ${title}`,
-      html: `
-        <p>Mulțumim pentru comanda ta! 🎉</p>
-        <p>Ți-am atașat fișierul personalizat pentru: <b>${title}</b>.</p>
-        <p>Dacă ai întrebări, scrie-ne la hello@miculmeuerou.ro.</p>
-      `,
-      attachments: [{ filename, content: fileBase64 }],
-    });
-  }
-
-  // 2) email către ADMIN (confirmare trimis + atașăm același fișier)
-  if (adminTo) {
-    await sendMail({
-      from: FROM,
-      to: adminTo,
-      subject: `Trimis clientului: ${title}`,
-      html: `
-        <p><b>Status:</b> ✔️ fișierul a fost generat și trimis clientului.</p>
-        <p><b>Produs:</b> ${title}</p>
-        ${shippingHtml}
-        <p><b>Atașament:</b> ${filename}</p>
-      `,
-      attachments: [{ filename, content: fileBase64 }],
-    });
-  }
-}
-
-/** Trimite DOAR email către ADMIN când nu s-a putut genera fișierul. */
-async function emailPerProductFailure(args: {
-  adminTo: string | undefined;
-  item: any;
-  errorMessage: string;
-  shippingHtml: string;
-  expectedPath?: string;
-}) {
-  const { adminTo, item, errorMessage, shippingHtml, expectedPath } = args;
-  if (!adminTo) return;
-  const title = prettyTitleForItem(item);
-  await sendMail({
-    from: FROM,
-    to: adminTo,
-    subject: `⚠️ NU s-a generat fișierul: ${title}`,
-    html: `
-      <p><b>Status:</b> ❌ fișierul NU a fost trimis clientului.</p>
-      <p><b>Produs:</b> ${title}</p>
-      ${shippingHtml}
-      ${expectedPath ? `<p><b>Așteptat la:</b> ${expectedPath}</p>` : ""}
-      <p><b>Eroare:</b> ${errorMessage}</p>
-    `,
-  });
-}
-
-/** Email per produs pentru carte personalizată avansat (manual, fără atașament). */
-async function emailPerProductCustom(args: {
-  emailClient: string;
-  adminTo: string | undefined;
-  item: any;
-  shippingHtml: string;
-}) {
-  const { emailClient, adminTo, item, shippingHtml } = args;
-  const name = item.childName || item?.customization?.childName || "Eroul";
-  const titleHuman = `Cartea eroului – ${name}`;
-
-  // Client: confirmare, fără atașament
-  if (emailClient) {
-    await sendMail({
-      from: FROM,
-      to: emailClient,
-      subject: `Comanda ta – ${titleHuman}`,
-      html: `
-        <p>Mulțumim pentru comanda ta! 🎉</p>
-        <p>Cartea ta personalizată avansat va fi realizată manual și o vei primi pe email în maxim <b>24 de ore</b>.</p>
-        <p>Dacă ai selectat și varianta tipărită, te vom anunța separat despre livrare.</p>
-      `,
-    });
-  }
-
-  // Admin: sarcini de lucru
-  if (adminTo) {
-    await sendMail({
-      from: FROM,
-      to: adminTo,
-      subject: `De realizat manual în 24h: ${titleHuman}`,
-      html: `
-        <p><b>Produs:</b> ${titleHuman}</p>
-        ${shippingHtml}
-        <p><b>Detalii personalizare:</b></p>
-        <pre style="white-space:pre-wrap">${JSON.stringify(item, null, 2)}</pre>
-      `,
-    });
-  }
-}
-
 export async function POST(req: NextRequest) {
   const sig = req.headers.get("stripe-signature");
-  if (!sig) return new NextResponse("Missing signature", { status: 400 });
+  const whSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+  let event: Stripe.Event;
 
-  const raw = await req.text(); // body brut pentru Stripe
-
-  let event: any;
+  // 1) Verificare semnătură (RAW body!)
   try {
-    event = stripe.webhooks.constructEvent(
-      raw,
-      sig,
-      process.env.STRIPE_WEBHOOK_SECRET as string
-    );
+    const raw = await req.text();
+    event = stripe.webhooks.constructEvent(raw, sig!, whSecret);
   } catch (err: any) {
-    console.error("❌ Webhook signature error:", err.message);
-    return new NextResponse(`Webhook Error: ${err.message}`, { status: 400 });
+    console.error("❌ Webhook signature error:", err?.message);
+    return NextResponse.json({ error: `Invalid signature: ${err?.message}` }, { status: 400 });
   }
 
-  if (event.type === "checkout.session.completed") {
-    const s = event.data.object as any;
+  if (event.type !== "checkout.session.completed") {
+    return NextResponse.json({ ok: true });
+  }
 
-    const emailClient =
-      s.customer_details?.email || s.customer_email || s.customer?.email || "";
-    const phoneClient = s.customer_details?.phone || "";
-    const shipping = s.shipping_details || {};
-    const addr = shipping?.address || {};
-    const adminTo = process.env.ORDERS_TO;
+  try {
+    const session = event.data.object as Stripe.Checkout.Session;
 
-    const shippingHtml = addr
-      ? `
-        <p><b>Livrare</b><br/>
-        ${shipping?.name || "-"}<br/>
-        ${addr.line1 || ""} ${addr.line2 || ""}<br/>
-        ${addr.postal_code || ""} ${addr.city || ""}<br/>
-        ${addr.state || ""} ${addr.country || ""}<br/>
-        Tel: ${phoneClient || "-"}</p>`
-      : "<p><b>Fără adresă de livrare</b></p>";
+    // 2) Luăm sesiunea completă (cu line_items + product)
+    const full = await stripe.checkout.sessions.retrieve(session.id, {
+      expand: ["line_items.data.price.product"],
+    });
 
-    // Coșul simplificat din metadata
-    const cartTxt = s.metadata?.cart || "[]";
-    let items: any[] = [];
-    try {
-      items = JSON.parse(cartTxt);
-    } catch {
-      items = [];
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://miculmeuerou.ro";
+    const email = full.customer_details?.email || undefined;
+    const items = full.line_items?.data || [];
+    const totalRON = Math.round((full.amount_total || 0) / 100);
+
+    // există linie de transport/print?
+    const hasPrinted = items.some((li) => {
+      const prod = li.price?.product as Stripe.Product;
+      return prod?.metadata?.t === "shipping" || prod?.metadata?.wp === "1";
+    });
+
+    // 3) Salvăm comanda — idempotent pe session.id, în câmpul paymentId
+    const order = await prisma.order.upsert({
+      where: { paymentId: session.id },
+      update: {}, // dacă rejucăm webhook-ul, nu schimbăm nimic critic
+      create: {
+        paymentId: session.id,
+        email: email || "unknown@unknown",
+        totalRON,
+        status: "received",
+      },
+    });
+
+    // 4) Salvăm OrderItem pentru fiecare produs „real” (ignorăm transportul)
+    for (const li of items) {
+      const prod = li.price?.product as Stripe.Product;
+      const md = (prod?.metadata || {}) as Record<string, any>;
+      if (md?.t === "shipping") continue;
+
+      const p = byId(md?.p || "");
+      const title = prod?.name || li.description || (p?.title || "Produs");
+
+      // construire personalizare în JSON (sigur pentru schema cu JSON)
+      const customization: any = {};
+      if (md?.n) customization.childName = md.n;
+      if (md?.g) customization.gender = md.g;
+      if (md?.e) customization.eyeColor = md.e;
+      if (md?.hc) customization.hairColor = md.hc;
+      if (md?.h) customization.hairstyle = md.h;
+      if (md?.wp) customization.wantPrinted = md.wp === "1";
+      if (md?.tk) customization.token = md.tk; // pentru carte-custom (poza)
+
+      await prisma.orderItem.create({
+        data: {
+          orderId: order.id,
+          productId: md?.p || "",
+          productType: md?.t || "",      // <— prefer „productType” în loc de „type”
+          title,
+          priceRON: Math.round((li.price?.unit_amount || 0) / 100),
+          customization,
+        } as any,
+      });
     }
 
-    // Procesăm fiecare produs separat (1 email/produs)
-    for (const it of items) {
-      try {
-        if (it.productType === "carte-custom") {
-          // livrare manuală, fără atașament
-          await emailPerProductCustom({ emailClient, adminTo, item: it, shippingHtml });
-          continue;
+    // 5) Trimite emailuri — câte unul per produs (client + admin)
+    for (const li of items) {
+      const prod = li.price?.product as Stripe.Product;
+      const md = (prod?.metadata || {}) as Record<string, any>;
+      if (md?.t === "shipping") continue;
+
+      const productId = String(md?.p || "");
+      const productType = String(md?.t || "");
+      const childName = String(md?.n || "");
+      const wantPrinted = md?.wp === "1";
+      const token = md?.tk as string | undefined; // carte-custom (fotografie)
+      const catalog = byId(productId);
+
+      const niceTitle = prod?.name || li.description || (catalog?.title || "Produs Micul Meu Erou");
+
+      let pdfAttachment: { filename: string; content: string } | undefined;
+      let photoAttachment: { filename: string; content: string } | undefined;
+
+      if (productType === "carte-custom") {
+        // atașăm fotografia la mailul admin (dacă ai salvat-o anterior în CustomAsset)
+        if (token) {
+          const asset = await prisma.customAsset.findUnique({ where: { token } });
+          if (asset) {
+            photoAttachment = {
+              filename: `fotografie-${childName || "copil"}.${asset.mime.split("/")[1] || "jpg"}`,
+              content: asset.dataBase64, // base64
+            };
+          }
         }
+      } else if (catalog) {
+        // generăm PDF din template-urile cu form fields
+        const { filename, contentBase64 } = await fillPdfFormAndBase64({
+          slug: catalog.slug,
+          type: catalog.type as "carte" | "fise",
+          childName: childName || "Edy",
+          fileTitle: catalog.title,
+        });
+        pdfAttachment = { filename, content: contentBase64 };
+      }
 
-        const baseTitle = BASE_TITLES[it.productId];
-        if (!baseTitle) throw new Error(`Titlu de bază lipsă pentru ${it.productId}`);
+      // --- EMAIL CLIENT ---
+      if (email) {
+        try {
+          const htmlClient =
+            productType === "carte-custom"
+              ? `
+                <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;line-height:1.5;color:#111">
+                  <p>Mulțumim pentru comanda ta!</p>
+                  <p>Cartea personalizată va fi livrată pe email în <b>maximum 2 zile lucrătoare</b>.</p>
+                  ${wantPrinted ? `<p>Varianta tipărită se livrează în <b>5–7 zile lucrătoare</b>.</p>` : ``}
+                  <hr style="margin:16px 0;border:none;border-top:1px solid #eee"/>
+                  <div style="text-align:center;opacity:.8;font-size:12px">
+                    <img src="${siteUrl}/logo-flat.svg" alt="MiculMeuErou" style="height:28px;margin-bottom:6px" />
+                    <div>MiculMeuErou.ro • Suport: <a href="mailto:hello@miculmeuerou.ro">hello@miculmeuerou.ro</a></div>
+                    <div>© 2025 MiculMeuErou.ro</div>
+                  </div>
+                </div>`
+              : `
+                <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;line-height:1.5;color:#111">
+                  <p>Mulțumim pentru comanda ta!</p>
+                  <p>Ți-am atașat fișierul pentru: <b>${niceTitle}</b>.</p>
+                  ${wantPrinted ? `<p>Ai ales și varianta tipărită. Livrarea se face în <b>5–7 zile lucrătoare</b>.</p>` : ``}
+                  <p style="margin-top:12px;">Dacă nu îl vezi imediat, verifică și folderul Spam/Promoții.</p>
+                  <hr style="margin:16px 0;border:none;border-top:1px solid #eee"/>
+                  <div style="text-align:center;opacity:.8;font-size:12px">
+                    <img src="${siteUrl}/logo-flat.svg" alt="MiculMeuErou" style="height:28px;margin-bottom:6px" />
+                    <div>MiculMeuErou.ro • Suport: <a href="mailto:hello@miculmeuerou.ro">hello@miculmeuerou.ro</a></div>
+                    <div>© 2025 MiculMeuErou.ro</div>
+                  </div>
+                </div>`;
 
-        // info pentru generator
-        const info: PdfInfo =
-          it.productType === "carte"
-            ? {
-                productType: "carte",
-                baseTitle,
-                childName: it.childName,
-                gender: it.gender,
-                hair: it.hairstyle,
-                eye: it.eye,
-              }
-            : {
-                productType: "fise",
-                baseTitle,
-                childName: it.childName,
-              };
+          await sendMailSafe({
+            from: FROM,
+            to: email,
+            subject: `Comanda ta: ${niceTitle}`,
+            html: htmlClient,
+            attachments: pdfAttachment ? [pdfAttachment] : undefined,
+          });
 
-        // încerci să personalizezi PDF
-        const buf = await personalizePdfSmart(info);
-        const filename = outputPdfName(info);
-        const base64 = (buf as Buffer).toString("base64");
+          await prisma.emailLog.create({
+            data: { to: email, subject: `Comanda ta: ${niceTitle}`, success: true },
+          });
+        } catch (e: any) {
+          await prisma.emailLog.create({
+            data: { to: email, subject: `Comanda ta: ${niceTitle}`, success: false, error: String(e?.message || e) },
+          });
+          await prisma.order.update({ where: { id: order.id }, data: { status: "email_failed" } });
+        }
+      }
 
-        // trimite cele 2 emailuri pentru acest produs (client + admin)
-        await emailPerProductSuccess({
-          emailClient,
-          adminTo,
-          item: it,
-          filename,
-          fileBase64: base64,
-          shippingHtml,
+      // --- EMAIL ADMIN ---
+      try {
+        const htmlAdmin =
+          productType === "carte-custom"
+            ? `
+              <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;line-height:1.5;color:#111">
+                <h3>Comandă nouă (Creează-ți cartea)</h3>
+                <p><b>Titlu:</b> ${niceTitle}</p>
+                <p><b>Nume copil:</b> ${childName || "-"}</p>
+                <p><b>Tipărit:</b> ${wantPrinted ? "DA" : "NU"} • <b>Transport:</b> ${wantPrinted ? PRICE.SHIPPING_FEE + " RON" : "—"}</p>
+                ${email ? `<p><b>Email client:</b> ${email}</p>` : ""}
+                <p>Fotografia clientului este atașată (dacă a fost încărcată anterior).</p>
+              </div>`
+            : `
+              <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;line-height:1.5;color:#111">
+                <h3>Comandă nouă</h3>
+                <p><b>Titlu:</b> ${niceTitle}</p>
+                <p><b>Nume copil:</b> ${childName || "-"}</p>
+                <p><b>Tip produs:</b> ${productType}</p>
+                <p><b>Tipărit:</b> ${wantPrinted ? "DA" : "NU"} • <b>Transport:</b> ${wantPrinted ? PRICE.SHIPPING_FEE + " RON" : "—"}</p>
+                ${email ? `<p><b>Email client:</b> ${email}</p>` : ""}
+                <p>PDF-ul generat este atașat pentru arhivă.</p>
+              </div>`;
+
+        const attachments = [
+          ...(pdfAttachment ? [pdfAttachment] : []),
+          ...(photoAttachment ? [photoAttachment] : []),
+        ];
+
+        await sendMailSafe({
+          from: FROM,
+          to: process.env.ORDERS_TO!,
+          subject: `Comandă: ${niceTitle} (${childName || "-"})`,
+          html: htmlAdmin,
+          attachments: attachments.length ? attachments : undefined,
+        });
+
+        await prisma.emailLog.create({
+          data: { to: process.env.ORDERS_TO!, subject: `Comandă: ${niceTitle}`, success: true },
         });
       } catch (e: any) {
-        // La eroare: clientul NU primește nimic pentru acel produs; adminul primește alertă
-        const expectedPath = (() => {
-          try {
-            const baseTitle = BASE_TITLES[it.productId];
-            if (!baseTitle) return undefined;
-            const info: any =
-              it.productType === "carte"
-                ? {
-                    productType: "carte",
-                    baseTitle,
-                    childName: it.childName,
-                    gender: it.gender,
-                    hair: it.hairstyle,
-                    eye: it.eye,
-                  }
-                : {
-                    productType: "fise",
-                    baseTitle,
-                    childName: it.childName,
-                  };
-            return sourcePdfPath(info);
-          } catch {
-            return undefined;
-          }
-        })();
-
-        await emailPerProductFailure({
-          adminTo,
-          item: it,
-          errorMessage: e?.message || String(e),
-          shippingHtml,
-          expectedPath,
+        await prisma.emailLog.create({
+          data: { to: process.env.ORDERS_TO!, subject: `Comandă: ${niceTitle}`, success: false, error: String(e?.message || e) },
         });
+        await prisma.order.update({ where: { id: order.id }, data: { status: "email_failed" } });
       }
     }
-  }
 
-  return NextResponse.json({ received: true });
+    // 6) Dacă totul a mers, marcăm emailed
+    await prisma.order.update({ where: { id: order.id }, data: { status: "emailed" } });
+
+    return NextResponse.json({ received: true });
+  } catch (err: any) {
+    console.error("❌ Webhook processing error:", err?.message || err);
+    return NextResponse.json({ error: err?.message || "Webhook error" }, { status: 500 });
+  }
 }

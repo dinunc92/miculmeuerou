@@ -1,0 +1,48 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Order {
+  id           String       @id @default(cuid())
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  email        String
+  totalRON     Int
+  paymentId    String?      @unique   // <— adaugă @unique
+  status       String       @default("pending")
+  items        OrderItem[]
+}
+
+model OrderItem {
+  id           String     @id @default(cuid())
+  orderId      String
+  order        Order      @relation(fields: [orderId], references: [id])
+  productId    String
+  productType  String
+  title        String
+  priceRON     Int
+  customization Json
+}
+
+model EmailLog {
+  id          String   @id @default(cuid())
+  to          String
+  subject     String
+  sentAt      DateTime @default(now())
+  success     Boolean
+  error       String?
+}
+
+model CustomAsset {
+  id         String   @id @default(cuid())
+  token      String   @unique
+  mime       String
+  dataBase64 String
+  createdAt  DateTime @default(now())
+}

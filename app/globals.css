@@ -64,29 +64,104 @@ a:hover {
 }
 
 /* ======== Buttons ======== */
-.btn-cta {
-  @apply inline-flex items-center justify-center rounded-xl px-4 py-2 font-semibold transition shadow-sm;
-  background-image: linear-gradient(
-    to right,
-    var(--brand-turquoise),
-    var(--brand-lilac)
-  );
-  color: white;
+/* CTA lizibil pe turcoaz: fundal alb, text mov, hover mov deschis */
+
+/* buton neutru */
+.btn-neutral {
+  display:inline-block;
+  padding:0.65rem 1rem;
+  border-radius:14px;
+  border:1px solid rgba(0,0,0,.08);
+  background:#fff;
+  color:#2a0b57;
+  font-weight:700;
 }
-.btn-cta:hover {
-  filter: brightness(1.08);
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
+.btn-neutral:hover{ background:#fafafa; }
+
+/* buton "Adaugă în coș" mai „wow” */
+.btn-add {
+  display:inline-flex;
+  align-items:center;
+  gap:.5rem;
+  padding:0.8rem 1.1rem;
+  border-radius:16px;
+  background:linear-gradient(135deg, #8b5cf6 0%, #22d3ee 100%);
+  color:#fff;
+  font-weight:900;
+  text-shadow:0 1px 2px rgba(0,0,0,.25);
+  box-shadow:0 10px 24px rgba(34,211,238,.35);
+  transition:transform .15s ease, box-shadow .2s ease, filter .2s ease;
 }
-.btn-cta:active {
-  transform: translateY(1px);
+.btn-add:hover { transform:translateY(-1px); filter:saturate(1.05); box-shadow:0 14px 32px rgba(34,211,238,.45); }
+.btn-add:active{ transform:translateY(0); }
+
+/* cele 3 butoane mari din homepage – card stilizat, lizibil */
+.home-cta {
+  display:block;
+  padding:1.1rem 1.2rem;
+  border-radius:20px;
+  background:linear-gradient(135deg, rgba(255,255,255,.95), rgba(255,255,255,.85));
+  border:1px solid rgba(0,0,0,.06);
+  box-shadow:0 10px 28px rgba(0,0,0,.10);
+  text-align:center;
+  font-weight:800;
+  color:#2a0b57;
+  transition:transform .15s ease, box-shadow .2s ease;
+}
+.home-cta:hover { transform:translateY(-2px); box-shadow:0 16px 36px rgba(0,0,0,.16); }
+
+/* mic toast simplu */
+.toast {
+  position:fixed; right:16px; bottom:16px;
+  background:#111; color:#fff; padding:.75rem 1rem; border-radius:12px;
+  box-shadow:0 10px 24px rgba(0,0,0,.25);
+  opacity:.98;
 }
 
-.btn-neutral {
-  @apply bg-white text-gray-800 border border-gray-200 rounded-xl font-medium transition;
+/* --- BUTOANE HOME (mai mici, lila deschis) --- */
+.home-cta{
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:.7rem 1rem;border-radius:1rem;
+  background:linear-gradient(180deg,#ede7ff,#f6f1ff);
+  border:1px solid #d9c9ff; color:#5b2bbf; font-weight:700;
+  box-shadow:0 4px 14px rgba(91,43,191,.10);
+  transition:transform .12s ease, box-shadow .2s ease, background .2s ease;
+  font-size:.95rem; line-height:1;
 }
-.btn-neutral:hover {
-  @apply bg-gray-50;
+.home-cta:hover{ transform:translateY(-1px); box-shadow:0 6px 18px rgba(91,43,191,.15); }
+
+/* CTA contrast puternic mov/turcoaz */
+.btn-cta{
+  padding:.8rem 1.1rem;border-radius:14px;
+  background:linear-gradient(135deg,#6136e9,#00b3b3);
+  color:#fff;font-weight:800;border:none;
+  box-shadow:0 8px 18px rgba(0,0,0,.12);
+  transition:transform .12s ease, filter .2s ease, box-shadow .2s ease;
 }
+.btn-cta:hover{ transform:translateY(-1px); filter:brightness(1.05); box-shadow:0 10px 22px rgba(0,0,0,.16); }
+
+/* link-buton „Vezi detalii” mai lizibil */
+.btn-outline{
+  padding:.6rem .9rem;border-radius:12px;
+  background:linear-gradient(180deg,#dcefff,#efe4ff);
+  border:1px solid rgba(0,0,0,.08); color:#3b2aa6; font-weight:700;
+}
+.btn-outline:hover{ filter:brightness(1.03); }
+
+/* hover pe meniu: păstrează textul mov (nu turcoaz) */
+.nav-link:hover { color:#5b2bbf; }
+
+.btn-add{
+  padding:.65rem .9rem;border-radius:12px;
+  background:linear-gradient(90deg,#cbb8ff,#e6ddff);
+  color:#4b2ca1;font-weight:800;border:1px solid #d9c9ff;
+  box-shadow:0 3px 10px rgba(91,43,191,.12);
+}
+.btn-add:hover{ filter:brightness(1.06); }
+
+/* --- checkbox mic --- */
+.input-chk { width:16px; height:16px; }
+
 
 /* ======== Generic Cards ======== */
 .card {
@@ -153,3 +228,16 @@ footer a:hover {
     font-size: 0.9rem;
   }
 }
+
+/* Preț vizibil peste tot */
+.price {
+  @apply font-extrabold text-gray-900;
+}
+
+.footer-strong {
+  background: linear-gradient(to bottom, rgba(183,132,247,0.15), rgba(183,132,247,0.08));
+  border-top: 0.5px solid transparent;
+  border-image: linear-gradient(70deg, var(--brand-turquoise), var(--brand-lilac)) 1;
+}
+
+

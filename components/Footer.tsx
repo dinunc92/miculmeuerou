@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function Footer(){
   return (
-    <footer className="border-t mt-12">
+<footer className="border-t mt-12 footer-strong">
       <div className="mx-auto max-w-6xl px-4 py-10 grid md:grid-cols-4 gap-8 text-sm">
         {/* Col 1: Brand + scurtă descriere */}
         <div>
@@ -11,7 +11,7 @@ export default function Footer(){
             <div className="font-semibold">Micul Meu Erou</div>
           </div>
           <p className="text-gray-600">
-            Fișe și cărți personalizate pentru copii — numele și avatarul devin parte din poveste.
+            Fișe și cărți personalizate pentru copii. Numele și avatarul devin parte din poveste.
           </p>
           <div className="mt-4 flex items-center gap-3">
             {/* Facebook */}
@@ -31,12 +31,12 @@ export default function Footer(){
           <ul className="space-y-1">
             <li><Link className="link-strong" href="/fise">Fișe</Link></li>
             <li><Link className="link-strong" href="/carti">Cărți</Link></li>
-            <li><Link className="link-strong" href="/personalizeaza-cartea">Personalizează cartea eroului</Link></li>
+            <li><Link className="link-strong" href="/creeaza-carte">Creează-ți cartea</Link></li>
             <li><Link className="link-strong" href="/intrebari-raspunsuri">Întrebări frecvente</Link></li>
             <li><Link className="link-strong" href="/contact">Contact</Link></li>
             <li><Link className="link-strong" href="/gdpr">GDPR</Link></li>
-            <li><Link className="link-strong" href="/termeni">Termeni și condiții</Link></li>
-            <li><Link className="link-strong" href="/retur">Politica de retur</Link></li>
+            <li><Link className="link-strong" href="/politici/termeni">Termeni și condiții</Link></li>
+            <li><Link className="link-strong" href="/politici/retur">Politica de retur</Link></li>
             <li><Link className="link-strong" href="/politici/confidentialitate">Politica de confidențialitate</Link></li>
 
           </ul>

@@ -1,107 +1,118 @@
-// data/products.ts
-export type ProductType = "fise" | "carte" | "carte-custom";
+import { PRICE } from "@/config/pricing";
 
 export type Product = {
   id: string;
   slug: string;
-  type: ProductType;
-  title: string;          // cu [NumeCopil]
-  titleWeb: string;       // cum apare pe site (default cu „Edy”)
+  type: "carte" | "fise" | "carte-custom";
+  title: string;
   description: string;
-  priceRON: number;
   image: string;
+  pages: number;   
+  priceRON: number;
+  benefits?: string[];
 };
 
 export const products: Product[] = [
-  // --- FIȘE ---
-  {
-    id: "fise-3-4",
-    slug: "fise-educative-3-4-ani",
-    type: "fise",
-    title: "Fișe educative 3–4 ani pentru [NumeCopil]",
-    titleWeb: "Fișe educative 3–4 ani pentru Edy",
-    description: "Set PDF (20 pagini). Personalizate cu numele copilului.",
-    priceRON: 39,
-    image: "/thumbs/fise-3-4.jpg",
-  },
-  {
-    id: "fise-4-5",
-    slug: "fise-educative-4-5-ani",
-    type: "fise",
-    title: "Fișe educative 4–5 ani pentru [NumeCopil]",
-    titleWeb: "Fișe educative 4–5 ani pentru Edy",
-    description: "Exerciții jucăușe pentru 4–5 ani.",
-    priceRON: 39,
-    image: "/thumbs/fise-4-5.jpg",
-  },
-  {
-    id: "fise-5-6",
-    slug: "fise-educative-5-6-ani",
-    type: "fise",
-    title: "Fișe educative 5–6 ani pentru [NumeCopil]",
-    titleWeb: "Fișe educative 5–6 ani pentru Edy",
-    description: "Litere, numere, logică.",
-    priceRON: 39,
-    image: "/thumbs/fise-5-6.jpg",
-  },
-  {
-    id: "fise-cifre",
-    slug: "fise-educative-cifre",
-    type: "fise",
-    title: "Fișe educative – cifrele pentru [NumeCopil]",
-    titleWeb: "Fișe educative – cifrele pentru Edy",
-    description: "Învață cifrele cu exerciții ilustrate și distractive.",
-    priceRON: 39,
-    image: "/thumbs/fise-cifre.jpg",
-  },
-
-  // --- CĂRȚI (3 titluri) ---
+  // CĂRȚI (avatar) — 29 RON
   {
     id: "carte-ziua",
-    slug: "carte-ziua-lui",
+    slug: "ziua-lui-nume",
     type: "carte",
     title: "Ziua lui [NumeCopil]",
-    titleWeb: "Ziua lui Edy",
-    description: "Poveste (16 pagini) personalizată cu numele copilului.",
-    priceRON: 159,
-    image: "/thumbs/carte-ziua.jpg",
+    description: "O poveste veselă despre ziua de naștere, cu numele copilului în rolul principal.",
+    image: "/covers/ziua.jpg",
+    priceRON: PRICE.BOOK,
+    pages: 20,   
+    benefits: ["Numele copilului în poveste", "Ilustrații prietenoase", "PDF instant + opțional tipărire în 5–7 zile"],
   },
   {
     id: "carte-numere",
-    slug: "carte-invata-sa-numere",
+    slug: "nume-invata-numere",
     type: "carte",
     title: "[NumeCopil] învață să numere",
-    titleWeb: "Edy învață să numere",
-    description: "O aventură jucăușă în lumea numerelor.",
-    priceRON: 159,
-    image: "/thumbs/carte-numere.jpg",
+    description: "Poveste jucăușă care introduce cifrele de la 1 la 10 în mod natural și distractiv.",
+    image: "/covers/numere.jpg",
+    priceRON: PRICE.BOOK,
+    pages: 20,   
+    benefits: ["Învățare prin joacă", "Ilustrații prietenoase", "PDF instant + opțional tipărire în 5–7 zile"],
   },
   {
     id: "carte-sentimente",
-    slug: "carte-cutia-cu-sentimente",
+    slug: "nume-si-cutia-cu-sentimente",
     type: "carte",
     title: "[NumeCopil] și cutia cu sentimente",
-    titleWeb: "Edy și cutia cu sentimente",
-    description: "O poveste caldă despre emoții și prietenie.",
-    priceRON: 159,
-    image: "/thumbs/carte-sentimente.jpg",
+    description: "Explorăm emoțiile într-o poveste caldă, pe înțelesul celor mici.",
+    image: "/covers/sentimente.jpg",
+    priceRON: PRICE.BOOK,
+    pages: 20,   
+    benefits: ["Conștientizare emoțională", "Text empatic", "PDF instant + opțional tipărire în 5–7 zile"],
   },
 
-  // --- CARTE PERSONALIZABILĂ AVANSAT (10 titluri default) ---
+  // FIȘE — 25 RON
+  {
+    id: "fise-3-4",
+    slug: "fise-3-4-ani",
+    type: "fise",
+    title: "Fișe educative 3–4 ani pentru [NumeCopil]",
+    description: "Fișe PDF colorate pentru motricitate fină, atenție și recunoaștere formă/culoare.",
+    image: "/products/fise-34.jpg",
+    priceRON: PRICE.WORKSHEETS,
+    pages: 40,   
+    benefits: ["Atenție vizuală", "Motricitate fină", "PDF instant"],
+  },
+  {
+    id: "fise-4-5",
+    slug: "fise-4-5-ani",
+    type: "fise",
+    title: "Fișe educative 4–5 ani pentru [NumeCopil]",
+    description: "Activități pentru numeratie 1–10, potriviri, trasee și desenare.",
+    image: "/products/fise-45.jpg",
+    priceRON: PRICE.WORKSHEETS,
+    pages: 30,   
+    benefits: ["Numeratie 1–10", "Potriviri și trasee", "PDF instant"],
+  },
+  {
+    id: "fise-5-6",
+    slug: "fise-5-6-ani",
+    type: "fise",
+    title: "Fișe educative 5–6 ani pentru [NumeCopil]",
+    description: "Exerciții pentru litere, pregătire scris-citit și logică.",
+    image: "/products/fise-56.jpg",
+    priceRON: PRICE.WORKSHEETS,
+    pages: 30,   
+    benefits: ["Litere și sunete", "Pregătire scris-citit", "PDF instant"],
+  },
+  {
+    id: "fise-cifre",
+    slug: "fise-cifre",
+    type: "fise",
+    title: "Fișe educative – cifrele pentru [NumeCopil]",
+    description: "Colecție de fișe pentru exersarea cifrelor, trasee și potriviri.",
+    image: "/products/fise-cifre.jpg",
+    priceRON: PRICE.WORKSHEETS,
+    pages: 20,   
+    benefits: ["Exersare cifre", "Trasare ghidată", "PDF instant"],
+  },
+
   {
     id: "carte-custom",
-    slug: "personalizeaza-cartea",
+    slug: "creeaza-carte",
     type: "carte-custom",
-    title: "Cartea eroului tău – [NumeCopil]",
-    titleWeb: "Cartea eroului tău – Edy",
-    description: "Îți personalizezi coperta/poza, dedicația și detalii unice. Livrare digitală în 24h.",
-    priceRON: 199,
-    image: "/thumbs/carte-custom.jpg",
+    title: "Carte personalizată din fotografie pentru [NumeCopil]",
+    description: "Trimite fotografia copilului și primești cartea digitală în 48h (opțional tipărită).",
+    image: "/home/creeaza.jpg",
+    priceRON: PRICE.CUSTOM_BOOK,
+    pages: 20,
+    benefits: ["Imagini din carte cu copilul din fotografie", "PDF în 48h", "Opțional tipărit 5–7 zile"],
   },
 ];
 
-export function byType(type: ProductType) { return products.filter(p=>p.type===type); }
-export function findBySlug(slug: string) { return products.find(p=>p.slug===slug); }
-export function findById(id: string) { return products.find(p=>p.id===id); }
-export const bySlug = findBySlug; // alias compat
-export const byId = findById;     // alias compat
+export function byType(type: Product["type"]) {
+  return products.filter((p) => p.type === type);
+}
+export function bySlug(slug: string) {
+  return products.find((p) => p.slug === slug);
+}
+export function byId(id: string) {
+  return products.find((p) => p.id === id);
+}

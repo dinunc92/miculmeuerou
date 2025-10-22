@@ -1,17 +1,21 @@
 import Link from "next/link";
-import { displayTitleFromPlaceholder } from "@/utils/title";
 
-export default function ProductCard({ p }:{ p: any }){
-  const shown = p.titleWeb || displayTitleFromPlaceholder(p.title, "Edy");
+type P = {
+  id: string; slug: string; title: string; image: string; priceRON: number; benefits?: string[];
+};
+
+export default function ProductCard({ p }: { p: P }) {
   return (
-    <Link href={`/${p.type === "fise" ? "fise" : "carti"}/${p.slug}`} className="card p-4 link-strong block">
-      <img src={p.image} alt="" className="w-full rounded-xl mb-3" />
-      <div className="flex items-center gap-2 mb-1 text-sm text-gray-500">
-        <span className="icon-sm">{p.type === "fise" ? "📄" : "📚"}</span>
-        <span>{p.type === "fise" ? "Fișe" : "Carte"}</span>
-      </div>
-      <div className="font-semibold">{shown}</div>
-      <div className="text-brand mt-1">{p.priceRON} RON</div>
+    <Link href={`/product/${p.slug}`} className="group block card p-4 hover:shadow-lg transition text-center">
+      <img src={p.image} alt={p.title} className="w-full h-40 object-cover rounded-xl mb-3" />
+      <h3 className="font-semibold text-gray-800 group-hover:text-[var(--brand-turquoise,#1fb8b7)]">{p.title}</h3>
+      <div className="price mt-1 text-lg font-bold">{p.priceRON} RON</div>
+      {!!p.benefits?.length && (
+        <ul className="mt-2 text-xs text-gray-600 list-disc pl-5 space-y-1 text-left">
+          {p.benefits.map((b, i) => <li key={i}>{b}</li>)}
+        </ul>
+      )}
+      <span className="btn-cta mt-3 inline-block">Vezi detalii</span>
     </Link>
   );
 }
