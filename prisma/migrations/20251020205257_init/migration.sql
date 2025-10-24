@@ -22,7 +22,6 @@ CREATE TABLE "OrderItem" (
     "childName" TEXT,
     "gender" TEXT,
     "eyeColor" TEXT,
-    "hairColor" TEXT,
     "hairstyle" TEXT,
     "unitRON" INTEGER NOT NULL,
 

@@ -1,21 +1,45 @@
+// components/ProductCard.tsx
+"use client";
 import Link from "next/link";
+import { useMemo, useState } from "react";
+import { displayTitleFromPlaceholder } from "@/utils/title";
+import CarouselCover from "./CarouselCover";
 
 type P = {
-  id: string; slug: string; title: string; image: string; priceRON: number; benefits?: string[];
+  id: string;
+  slug: string;
+  type: "fise" | "carte" | "carte-custom";
+  title: string;
+  image: string;          // cover principal
+  priceRON: number;
 };
 
 export default function ProductCard({ p }: { p: P }) {
+  const shown = useMemo(() => displayTitleFromPlaceholder(p.title, "Edy"), [p.title]);
+  const previews = [
+    `/previews/${p.slug}/p1.jpg`,
+    `/previews/${p.slug}/p2.jpg`,
+    `/previews/${p.slug}/p3.jpg`,
+    `/previews/${p.slug}/p4.jpg`,
+  ];
+
   return (
-    <Link href={`/product/${p.slug}`} className="group block card p-4 hover:shadow-lg transition text-center">
-      <img src={p.image} alt={p.title} className="w-full h-40 object-cover rounded-xl mb-3" />
-      <h3 className="font-semibold text-gray-800 group-hover:text-[var(--brand-turquoise,#1fb8b7)]">{p.title}</h3>
-      <div className="price mt-1 text-lg font-bold">{p.priceRON} RON</div>
-      {!!p.benefits?.length && (
-        <ul className="mt-2 text-xs text-gray-600 list-disc pl-5 space-y-1 text-left">
-          {p.benefits.map((b, i) => <li key={i}>{b}</li>)}
-        </ul>
-      )}
-      <span className="btn-cta mt-3 inline-block">Vezi detalii</span>
-    </Link>
+    <div className="card p-3">
+      {/* Carusel pe cover (nu schimbă pagina la click pe săgeți) */}
+      <Link href={`/product/${p.slug}`} className="block no-underline">
+        <CarouselCover images={[p.image, ...previews]} height={300} />
+      </Link>
+
+      <div className="pt-3">
+        <div className="font-bold">{shown}</div>
+        <div className="price mt-1">{p.priceRON} RON</div>
+
+        <div className="mt-3 flex items-center gap-2">
+          <Link href={`/product/${p.slug}`} className="btn-outline">
+            Vezi detalii
+          </Link>
+        </div>
+      </div>
+    </div>
   );
 }

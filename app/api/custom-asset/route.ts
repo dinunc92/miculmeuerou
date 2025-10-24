@@ -1,19 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 export async function POST(req: NextRequest) {
-  try {
-    const { token, mime, dataBase64 } = await req.json();
-    if (!token || !mime || !dataBase64) {
-      return NextResponse.json({ error: "Lipsesc câmpuri" }, { status: 400 });
-    }
-    await prisma.customAsset.upsert({
-      where: { token },
-      update: { mime, dataBase64 },
-      create: { token, mime, dataBase64 },
-    });
-    return NextResponse.json({ ok: true });
-  } catch (e: any) {
-    return NextResponse.json({ error: e?.message || "Eroare" }, { status: 500 });
-  }
+  const form = await req.formData();
+  const file = form.get("file") as File | null;
+  if (!file) return NextResponse.json({ error: "No file" }, { status: 400 });
+
+  const buf = Buffer.from(await file.arrayBuffer());
+  const base64 = buf.toString("base64");
+  const token = crypto.randomUUID();
+  const mime = file.type || "image/jpeg";
+
+  await prisma.customAsset.create({
+    data: { token, mime, dataBase64: base64 },
+  });
+
+  return NextResponse.json({ token });
 }

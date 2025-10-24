@@ -52,14 +52,14 @@ export default function Navbar() {
             <span className="icon-sm" aria-hidden>📄</span> Fișe
           </NavLink>
           <NavLink href="/carti" active={isActive(pathname, "/carti")}>
-            <span className="icon-sm" aria-hidden>📚</span> Cărți
+            <span className="icon-sm" aria-hidden>📚</span> Cărți cu avatarul copilului
           </NavLink>
           <Link
             href="/creeaza-carte"
             className={`nav-link link-strong font-extrabold ${isActive(pathname, "/creeaza-carte") ? "nav-link-active" : ""}`}
-            title="Creează-ți cartea"
+            title="Cărți cu fotografia copilului"
           >
-            ✨ Creează-ți cartea
+            ✨ Cărți cu fotografia copilului
           </Link>
         </nav>
 
@@ -111,14 +111,14 @@ export default function Navbar() {
               📄 Fișe
             </NavLink>
             <NavLink href="/carti" active={isActive(pathname, "/carti")} onClick={() => setOpen(false)}>
-              📚 Cărți
+              📚 Cărți cu avatarul copilului
             </NavLink>
             <Link
               href="/creeaza-carte"
               className={`nav-link link-strong font-extrabold ${isActive(pathname, "/creeaza-carte") ? "nav-link-active" : ""}`}
               onClick={() => setOpen(false)}
             >
-              ✨ Creează-ți cartea
+              ✨ Cărți cu fotografia copilului
             </Link>
             <NavLink href="/intrebari-raspunsuri" active={isActive(pathname, "/intrebari-raspunsuri")} onClick={() => setOpen(false)}>
               Întrebări

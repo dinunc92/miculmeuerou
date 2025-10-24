@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 type Product = {
   id: string;
   slug: string;
-  type: "carte" | "fise";
+  type: "carte" | "fise" | "carte-custom"; // <— extins
   title: string;
   priceRON: number;
 };

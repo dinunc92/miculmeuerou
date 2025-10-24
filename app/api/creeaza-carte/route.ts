@@ -51,10 +51,10 @@ export async function POST(req: NextRequest) {
     await sendMailSafe({
       from: FROM,
       to: adminTo,
-      subject: `Creează-ți cartea — ${childName}${wantPrinted ? " (TIPĂRIT)" : ""}`,
+      subject: `Personalizează-ți cartea — ${childName}${wantPrinted ? " (TIPĂRIT)" : ""}`,
       html: `
         <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial">
-          <h3>Solicitare nouă „Creează-ți cartea”</h3>
+          <h3>Solicitare nouă „Personalizează-ți cartea”</h3>
           <p><b>Nume copil:</b> ${childName}${age ? `, <b>Vârsta:</b> ${age}` : ""}</p>
           <p><b>Dedicat de la:</b> ${relation}${relationName ? ` — ${relationName}` : ""}</p>
           <p><b>Copertă:</b> ${coverId || "-"}</p>
@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
     await sendMailSafe({
       from: FROM,
       to: parentEmail,
-      subject: "Am primit cererea ta — Creează-ți cartea",
+      subject: "Am primit cererea ta — Personalizează-ți cartea",
       html: `
         <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial; line-height:1.5; color:#111">
           <p>Mulțumim! Am primit cererea ta pentru cartea personalizată a lui/ei <b>${childName}</b>.</p>

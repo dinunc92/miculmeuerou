@@ -1,109 +1,105 @@
 // app/api/checkout/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
-import { byId } from "@/data/products";
-import { PRICE } from "@/config/pricing";
-import { displayTitleSafe } from "@/utils/title";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const stripeSecret = process.env.STRIPE_SECRET_KEY!;
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2024-04-10" });
 
-const stripe = new Stripe(stripeSecret, { apiVersion: "2024-04-10" });
-
-type CheckoutItem = {
+type BodyItem = {
   productId: string;
   productType: "carte" | "fise" | "carte-custom";
+  title: string;
+  priceRON: number;
   quantity?: number;
-  stripeName?: string;
   customization?: {
     childName?: string;
-    gender?: string;
-    eyeColor?: string;
-    hairColor?: string;
+    gender?: "boy"|"girl";
+    eyeColor?: "green"|"brown"|"blue";
     hairstyle?: string;
     wantPrinted?: boolean;
-    token?: string;            // <— pentru carte-custom (fotografie)
-    // age?: number | string;
-    // relation?: string;
-    // relationName?: string;
-    // coverId?: string;
-    // message?: string;
+    token?: string;
+    selectedTitleId?: string;
+    selectedTitle?: string;
+    age?: number;
+    relation?: string;
+    relationName?: string;
+    coverId?: string;
+    parentEmail?: string;
+    message?: string;
   };
 };
 
+function displayTitleFromPlaceholder(title: string, name: string){
+  if (!title) return title;
+  return title.replace(/\[NumeCopil\]/g, name || "Edy");
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json().catch(() => ({}));
-    const items = (body?.items || []) as CheckoutItem[];
+    const body = await req.json();
+    const items: BodyItem[] = Array.isArray(body.items) ? body.items : [];
 
-    if (!Array.isArray(items) || items.length === 0) {
-      return NextResponse.json({ error: "Lipsesc items." }, { status: 400 });
+    if (!items.length) {
+      return NextResponse.json({ error: "Coșul este gol." }, { status: 400 });
     }
 
-    const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
-    let needShipping = false;
+    const site = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
-    for (const it of items) {
-      const p = byId(it.productId);
-      if (!p) {
-        return NextResponse.json({ error: `Produs necunoscut: ${it.productId}` }, { status: 400 });
-      }
+    // detectăm dacă trebuie transport (o singură dată per comanda)
+    const needsShipping = items.some((it) => it.customization?.wantPrinted === true);
 
-      const q = Math.max(1, Math.min(10, Number(it.quantity || 1)));
-      const childName = it.customization?.childName || "";
-      const wantPrinted = !!it.customization?.wantPrinted;
+    // mapează produsele în line_items Stripe
+    const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = items.map((it) => {
+      const qty = it.quantity && it.quantity > 0 ? it.quantity : 1;
+      const childName = it.customization?.childName || "Edy";
 
-      if ((it.productType === "carte" || it.productType === "carte-custom") && wantPrinted) {
-        needShipping = true;
-      }
+      // Produs (nume pentru Stripe)
+      const stripeTitle = displayTitleFromPlaceholder(it.title || "Produs", childName);
 
-      const extra =
-        (it.productType === "carte" || it.productType === "carte-custom") && wantPrinted
-          ? PRICE.PRINTED_EXTRA
-          : 0;
-
-      const unitRON = p.priceRON + extra;
-      const stripeName = it.stripeName || displayTitleSafe(p.title, childName);
-
-      const md: Record<string, string> = {
-        p: it.productId,
-        t: it.productType,
+      // Metadata bogat (webhook-ul o să le citească)
+      const metadata: Record<string, string> = {
+        t: it.productType,      // tip: fise / carte / carte-custom
+        p: it.productId,        // id produs din catalog
+        n: childName,           // nume copil
       };
-      if (childName) md.n = childName;
-      if (it.customization?.gender) md.g = it.customization.gender!;
-      if (it.customization?.eyeColor) md.e = it.customization.eyeColor!;
-      if (it.customization?.hairColor) md.hc = it.customization.hairColor!;
-      if (it.customization?.hairstyle) md.h = it.customization.hairstyle!;
-      if (wantPrinted) md.wp = "1";
-      if (it.productType === "carte-custom" && it.customization?.token) md.tk = it.customization.token;
+      if (it.customization?.gender)        metadata.g = it.customization.gender;
+      if (it.customization?.eyeColor)      metadata.e = it.customization.eyeColor;
+      if (it.customization?.hairstyle)     metadata.h  = it.customization.h;
+      if (it.customization?.wantPrinted)   metadata.wp = "1";
+      if (it.customization?.token)         metadata.tk = it.customization.token;
+      if (it.customization?.selectedTitle) metadata.st = it.customization.selectedTitle;
+      if (it.customization?.selectedTitleId) metadata.sti = it.customization.selectedTitleId;
+      if (typeof it.customization?.age === "number") metadata.age = String(it.customization.age);
+      if (it.customization?.relation)      metadata.rel = it.customization.relation;
+      if (it.customization?.relationName)  metadata.reln = it.customization.relationName;
+      if (it.customization?.coverId)       metadata.cv = it.customization.coverId;
 
-      line_items.push({
-        quantity: q,
+      return {
+        quantity: qty,
         price_data: {
           currency: "ron",
+          unit_amount: Math.round((it.priceRON || 0) * 100),
           product_data: {
-            name: stripeName,
-            metadata: md,
+            name: stripeTitle,
+            metadata,
           },
-          unit_amount: Math.round(unitRON * 100),
         },
-      });
-    }
+      };
+    });
 
-    // transport 15 RON o singură dată
-    if (needShipping) {
+    // linie transport o singură dată (dacă e cazul)
+    if (needsShipping) {
       line_items.push({
         quantity: 1,
         price_data: {
           currency: "ron",
+          unit_amount: 15 * 100,
           product_data: {
             name: "Transport",
             metadata: { t: "shipping" },
           },
-          unit_amount: Math.round(PRICE.SHIPPING_FEE * 100),
         },
       });
     }
@@ -111,19 +107,15 @@ export async function POST(req: NextRequest) {
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       payment_method_types: ["card"],
-      allow_promotion_codes: true,
+      allow_promotion_codes: false,  // <— elimină promo codes
       line_items,
-      success_url: `${siteUrl}/success?sid={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${siteUrl}/cart`,
-      phone_number_collection: { enabled: needShipping },
-      shipping_address_collection: needShipping
-        ? { allowed_countries: ["RO"] }
-        : undefined,
+      success_url: `${site}/success?sid={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${site}/cart`,
     });
 
     return NextResponse.json({ url: session.url });
-  } catch (e: any) {
+  } catch (e:any) {
     console.error("checkout error:", e?.message || e);
-    return NextResponse.json({ error: e?.message || "Eroare creare sesiune Stripe" }, { status: 500 });
+    return NextResponse.json({ error: e?.message || "Eroare creare sesiune" }, { status: 500 });
   }
 }

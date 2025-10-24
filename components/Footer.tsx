@@ -29,9 +29,9 @@ export default function Footer(){
         <div>
           <div className="font-semibold mb-2">Linkuri utile</div>
           <ul className="space-y-1">
-            <li><Link className="link-strong" href="/fise">Fișe</Link></li>
-            <li><Link className="link-strong" href="/carti">Cărți</Link></li>
-            <li><Link className="link-strong" href="/creeaza-carte">Creează-ți cartea</Link></li>
+            <li><Link className="link-strong" href="/fise">Fișe educative personalizate</Link></li>
+            <li><Link className="link-strong" href="/carti">Cărți cu avatarul copilului</Link></li>
+            <li><Link className="link-strong" href="/creeaza-carte">Cărți cu fotografia copilului</Link></li>
             <li><Link className="link-strong" href="/intrebari-raspunsuri">Întrebări frecvente</Link></li>
             <li><Link className="link-strong" href="/contact">Contact</Link></li>
             <li><Link className="link-strong" href="/gdpr">GDPR</Link></li>

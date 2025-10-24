@@ -10,7 +10,6 @@
   - You are about to drop the column `childName` on the `OrderItem` table. All the data in the column will be lost.
   - You are about to drop the column `eyeColor` on the `OrderItem` table. All the data in the column will be lost.
   - You are about to drop the column `gender` on the `OrderItem` table. All the data in the column will be lost.
-  - You are about to drop the column `hairColor` on the `OrderItem` table. All the data in the column will be lost.
   - You are about to drop the column `hairstyle` on the `OrderItem` table. All the data in the column will be lost.
   - You are about to drop the column `type` on the `OrderItem` table. All the data in the column will be lost.
   - You are about to drop the column `unitRON` on the `OrderItem` table. All the data in the column will be lost.
@@ -46,7 +45,6 @@ ALTER COLUMN "status" SET DEFAULT 'pending';
 ALTER TABLE "OrderItem" DROP COLUMN "childName",
 DROP COLUMN "eyeColor",
 DROP COLUMN "gender",
-DROP COLUMN "hairColor",
 DROP COLUMN "hairstyle",
 DROP COLUMN "type",
 DROP COLUMN "unitRON",

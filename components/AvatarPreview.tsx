@@ -1,4 +1,4 @@
-type Opts = { gender:string; eyeColor:string; hairColor:string; hairstyle:string; glasses:boolean; };
+type Opts = { gender:string; eyeColor:string; hairstyle:string; glasses:boolean; };
 export default function AvatarPreview({name, opts}:{name:string; opts:Opts}){
   return (
     <div className="card p-6 text-center">
@@ -7,7 +7,7 @@ export default function AvatarPreview({name, opts}:{name:string; opts:Opts}){
         <span className="text-5xl">🦸</span>
       </div>
       <div className="mt-3 font-semibold">{name || "Nume copil"}</div>
-      <div className="text-xs text-gray-500">{opts.gender}, ochi {opts.eyeColor}, păr {opts.hairColor} ({opts.hairstyle}) {opts.glasses?"👓":""}</div>
+      <div className="text-xs text-gray-500">{opts.gender}, ochi {opts.eyeColor}, păr ({opts.hairstyle}) {opts.glasses?"👓":""}</div>
     </div>
   );
 }

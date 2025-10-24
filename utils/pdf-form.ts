@@ -3,28 +3,69 @@ import fs from "fs/promises";
 import path from "path";
 import { PDFDocument, PDFFont } from "pdf-lib";
 
-type Kind = "carte" | "fise";
+// Tipuri de produse
+export type Kind = "carte" | "fise";
 
-/** Calea către fișierul PDF-șablon, pe baza slug-ului și tipului. */
-export function slugPath(slug: string, type: Kind) {
-  const base = path.join(
-    process.cwd(),
-    "public",
-    type === "carte" ? "books" : "worksheets"
-  );
-  return path.join(base, `${slug}.pdf`);
+// Personalizare (pentru găsirea șablonului pe avatar)
+export type CharacterOpts = {
+  gender?: "boy" | "girl";
+  hairstyle?: string; // ex. "blonde-curly"
+  eyeColor?: "blue" | "brown" | "green";
+};
+
+// --- Helper: rezolvăm calea spre template.pdf după structura nouă ---
+// public/books/{slug}/{gender}/{hairstyle}/{eyeColor}/template.pdf
+// Fallback: public/books/{slug}.pdf (legacy) sau public/worksheets/{slug}.pdf
+async function resolveTemplatePath(
+  slug: string,
+  type: Kind,
+  ch?: CharacterOpts
+): Promise<string> {
+  const base =
+    type === "carte"
+      ? path.join(process.cwd(), "public", "books")
+      : path.join(process.cwd(), "public", "worksheets");
+
+  // dacă avem toate atributele avatarului -> căutăm structura pe foldere
+  if (type === "carte" && ch?.gender && ch?.hairstyle && ch?.eyeColor) {
+    const p = path.join(
+      base,
+      slug,
+      ch.gender,
+      ch.hairstyle,
+      ch.eyeColor,
+      "template.pdf"
+    );
+    try {
+      await fs.access(p);
+      return p;
+    } catch {
+      // cade pe fallback mai jos
+    }
+  }
+
+  // fallback 1: {base}/{slug}/template.pdf
+  const p1 = path.join(base, slug, "template.pdf");
+  try {
+    await fs.access(p1);
+    return p1;
+  } catch {}
+
+  // fallback 2: {base}/{slug}.pdf (moștenire)
+  const p2 = path.join(base, `${slug}.pdf`);
+  await fs.access(p2); // dacă nu există, lasă să arunce ENOENT (utile pentru debugging)
+  return p2;
 }
 
-/** Încarcă fontul TTF pentru diacritice (DejaVuSans). Pune fișierul în /public/fonts/DejaVuSans.ttf */
-async function loadFontBytes() {
+// Încarcă font TTF cu diacritice (DejaVuSans.ttf în /public/fonts)
+async function loadFontBytes(): Promise<Uint8Array> {
   const p = path.join(process.cwd(), "public", "fonts", "DejaVuSans.ttf");
-  return fs.readFile(p);
+  const buf = await fs.readFile(p);
+  return new Uint8Array(buf); // asigurăm tipul așteptat de pdf-lib
 }
 
-/** Numele câmpurilor text pe care le umplem cu numele copilului.
- * Adaugă aici orice alte nume folosești în PDF (ex. NumeCopil_Coperta).
- */
-function allNameFields() {
+// câmpuri de formular care vor primi numele copilului
+function allNameFields(): string[] {
   return [
     "NumeCopil",
     "NumeCopil_1",
@@ -34,63 +75,68 @@ function allNameFields() {
   ];
 }
 
-/** Înlocuiește [NumeCopil] în titlul fișierului final. */
+// numele fișierului final: înlocuiește [NumeCopil] și scoate descrierea avatarului din titlu
 function resolveFileTitle(fileTitle: string, childName: string) {
-  return (fileTitle || "carte").replace(/\[NumeCopil\]/g, childName) + ".pdf";
+  const cleanTitle = (fileTitle || "carte")
+    .replace(/\[NumeCopil\]/g, childName)
+    // elimină eventuale sufixe de tip: "– băiat, blonde-spike, blue"
+    .replace(/\s*[–-]\s*(băiat|fată).*$/i, "")
+    .trim();
+
+  return `${cleanTitle}.pdf`;
 }
 
-/** Actualizează aparențele tuturor câmpurilor text să folosească fontul nostru (diacritice ok). */
+// regenerează aparențele câmpurilor text cu fontul nostru
 function updateAllTextFieldAppearances(pdfDoc: PDFDocument, font: PDFFont) {
-  // pdf-lib nu expune direct lista tuturor câmpurilor; traversăm formularul prin API public
   const form = pdfDoc.getForm();
-  // getFields() există, dar este tipat generic; îl folosim ca any pentru a le parcurge
+  // api public: getFields()
   const fields = (form as any).getFields?.() || [];
   for (const f of fields) {
-    // doar pentru textfields; altele le ignorăm
     if (typeof (f as any).setText === "function") {
-      // Re-generează aparențele cu fontul nostru
       (f as any).updateAppearances?.(font);
     }
   }
 }
 
-/** Umple câmpurile `NumeCopil*`, aplatizează (flatten) și returnează { filename, contentBase64 } */
+// API principal: întoarce { filename, contentBase64 }
 export async function fillPdfFormAndBase64(opts: {
-  slug: string;          // ex. "ziua-lui-nume"
-  type: Kind;            // "carte" | "fise"
-  childName: string;     // ex. "Edy"
-  fileTitle: string;     // ex. "Ziua lui [NumeCopil]"
+  slug: string;
+  type: Kind;
+  childName: string;
+  fileTitle: string; // ex: "Ziua lui [NumeCopil] – băiat, blonde-spike, blue"
+  character?: CharacterOpts; // pentru căutarea template-ului corect
 }) {
-  // 1) Citește șablonul
-  const srcPath = slugPath(opts.slug, opts.type);
-  const src = await fs.readFile(srcPath);
+  // 1) găsim calea template-ului
+  const srcPath = await resolveTemplatePath(opts.slug, opts.type, opts.character);
+  const srcBuf = await fs.readFile(srcPath);
+  const src = new Uint8Array(srcBuf);
 
-  // 2) Încarcă PDF-ul ca „formular” (nu actualizăm automat aparențele)
-  const pdfDoc = await PDFDocument.load(src, { updateFieldAppearances: false });
+  // 2) încărcăm PDF (lăsăm updateFieldAppearances default -> îl controlăm noi)
+  const pdfDoc = await PDFDocument.load(src);
   const form = pdfDoc.getForm();
 
-  // 3) Încarcă fontul cu diacritice și setează-l ca aparență pentru textfields
+  // 3) fontul cu diacritice
   const fontBytes = await loadFontBytes();
   const embedded = await pdfDoc.embedFont(fontBytes);
+
+  // 4) completăm toate câmpurile NumeCopil*
+  const name = (opts.childName || "Edy").slice(0, 24);
+  for (const fieldName of allNameFields()) {
+    const tf = form.getTextField(fieldName);
+    if (tf) {
+      tf.setText(name);
+      (tf as any).updateAppearances?.(embedded);
+    }
+  }
+  // (siguranță) regenerează aparențele
   form.updateFieldAppearances(embedded);
   updateAllTextFieldAppearances(pdfDoc, embedded);
 
-  // 4) Umple câmpurile standard cu numele copilului (limitează lungimea dacă vrei)
-  const name = (opts.childName || "Edy").slice(0, 24);
-  for (const fieldName of allNameFields()) {
-    const f = form.getTextField(fieldName);
-    if (f) {
-      f.setText(name);
-      // Sigurăm aparența corectă per-câmp (unele editoare ignoră setarea globală)
-      (f as any).updateAppearances?.(embedded);
-    }
-  }
-
-  // 5) Aplatizează formularul (devine static, ne-editabil)
+  // 5) aplatizăm
   form.flatten();
 
-  // 6) Salvează
-  const out = await pdfDoc.save();
+  // 6) salvăm
+  const out = await pdfDoc.save(); // Uint8Array
   const contentBase64 = Buffer.from(out).toString("base64");
   const filename = resolveFileTitle(opts.fileTitle, name);
 

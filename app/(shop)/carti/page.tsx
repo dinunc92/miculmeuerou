@@ -47,7 +47,7 @@ export default function CartiPage() {
       </div>
 
       <div className="mt-10">
-        <Link href="/creeaza-carte" className="btn-cta">Sau… Creează-ți cartea din fotografie</Link>
+        <Link href="/creeaza-carte" className="btn-cta">Sau… Personalizeză-ți cartea din fotografie</Link>
       </div>
     </div>
   );
