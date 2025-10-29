@@ -13,9 +13,6 @@ export type CharacterOpts = {
   eyeColor?: "blue" | "brown" | "green";
 };
 
-// --- Helper: rezolvăm calea spre template.pdf după structura nouă ---
-// public/books/{slug}/{gender}/{hairstyle}/{eyeColor}/template.pdf
-// Fallback: public/books/{slug}.pdf (legacy) sau public/worksheets/{slug}.pdf
 async function resolveTemplatePath(
   slug: string,
   type: Kind,
@@ -26,7 +23,6 @@ async function resolveTemplatePath(
       ? path.join(process.cwd(), "public", "books")
       : path.join(process.cwd(), "public", "worksheets");
 
-  // dacă avem toate atributele avatarului -> căutăm structura pe foldere
   if (type === "carte" && ch?.gender && ch?.hairstyle && ch?.eyeColor) {
     const p = path.join(
       base,
@@ -39,21 +35,17 @@ async function resolveTemplatePath(
     try {
       await fs.access(p);
       return p;
-    } catch {
-      // cade pe fallback mai jos
-    }
+    } catch {}
   }
 
-  // fallback 1: {base}/{slug}/template.pdf
   const p1 = path.join(base, slug, "template.pdf");
   try {
     await fs.access(p1);
     return p1;
   } catch {}
 
-  // fallback 2: {base}/{slug}.pdf (moștenire)
   const p2 = path.join(base, `${slug}.pdf`);
-  await fs.access(p2); // dacă nu există, lasă să arunce ENOENT (utile pentru debugging)
+  await fs.access(p2); // lasă să arunce ENOENT pentru debugging clar
   return p2;
 }
 
@@ -61,10 +53,10 @@ async function resolveTemplatePath(
 async function loadFontBytes(): Promise<Uint8Array> {
   const p = path.join(process.cwd(), "public", "fonts", "DejaVuSans.ttf");
   const buf = await fs.readFile(p);
-  return new Uint8Array(buf); // asigurăm tipul așteptat de pdf-lib
+  return new Uint8Array(buf);
 }
 
-// câmpuri de formular care vor primi numele copilului
+// câmpurile de formular care primesc numele copilului
 function allNameFields(): string[] {
   return [
     "NumeCopil",
@@ -75,13 +67,12 @@ function allNameFields(): string[] {
   ];
 }
 
-// numele fișierului final: înlocuiește [NumeCopil] și scoate descrierea avatarului din titlu
+// titlul final de fișier: înlocuiește [NumeCopil] și curăță sufixe descriptive
 function resolveFileTitle(fileTitle: string, childName: string) {
   const cleanTitle = (fileTitle || "carte")
     .replace(/\[NumeCopil\]/g, childName)
-    // elimină eventuale sufixe de tip: "– băiat, blonde-spike, blue"
     .replace(/\s*[–-]\s*(băiat|fată).*$/i, "")
-    .trim();
+  .trim();
 
   return `${cleanTitle}.pdf`;
 }
@@ -89,7 +80,6 @@ function resolveFileTitle(fileTitle: string, childName: string) {
 // regenerează aparențele câmpurilor text cu fontul nostru
 function updateAllTextFieldAppearances(pdfDoc: PDFDocument, font: PDFFont) {
   const form = pdfDoc.getForm();
-  // api public: getFields()
   const fields = (form as any).getFields?.() || [];
   for (const f of fields) {
     if (typeof (f as any).setText === "function") {
@@ -104,38 +94,42 @@ export async function fillPdfFormAndBase64(opts: {
   type: Kind;
   childName: string;
   fileTitle: string; // ex: "Ziua lui [NumeCopil] – băiat, blonde-spike, blue"
-  character?: CharacterOpts; // pentru căutarea template-ului corect
+  character?: CharacterOpts; // pentru căutarea template-ului corect la avatar
 }) {
-  // 1) găsim calea template-ului
   const srcPath = await resolveTemplatePath(opts.slug, opts.type, opts.character);
   const srcBuf = await fs.readFile(srcPath);
   const src = new Uint8Array(srcBuf);
 
-  // 2) încărcăm PDF (lăsăm updateFieldAppearances default -> îl controlăm noi)
+  // Încărcăm PDF
   const pdfDoc = await PDFDocument.load(src);
   const form = pdfDoc.getForm();
 
-  // 3) fontul cu diacritice
+  // Font DejaVuSans.ttf
   const fontBytes = await loadFontBytes();
   const embedded = await pdfDoc.embedFont(fontBytes);
 
-  // 4) completăm toate câmpurile NumeCopil*
+  // Completăm toate câmpurile NumeCopil*
   const name = (opts.childName || "Edy").slice(0, 24);
   for (const fieldName of allNameFields()) {
-    const tf = form.getTextField(fieldName);
-    if (tf) {
-      tf.setText(name);
-      (tf as any).updateAppearances?.(embedded);
-    }
+    try {
+      const tf = form.getTextField(fieldName);
+      if (tf) {
+        tf.setText(name);
+        (tf as any).updateAppearances?.(embedded);
+      }
+    } catch {}
   }
+
   // (siguranță) regenerează aparențele
-  form.updateFieldAppearances(embedded);
+  try {
+    (form as any).updateFieldAppearances?.(embedded);
+  } catch {}
   updateAllTextFieldAppearances(pdfDoc, embedded);
 
-  // 5) aplatizăm
+  // Aplatizăm
   form.flatten();
 
-  // 6) salvăm
+  // Salvăm
   const out = await pdfDoc.save(); // Uint8Array
   const contentBase64 = Buffer.from(out).toString("base64");
   const filename = resolveFileTitle(opts.fileTitle, name);

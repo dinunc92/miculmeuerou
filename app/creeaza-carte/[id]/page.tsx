@@ -183,7 +183,7 @@ export default function CreeazaCarteaPersonalizare() {
                 onClick={()=>setCoverId(c)}
                 className={`rounded-xl overflow-hidden border transition ${coverId===c ? "ring-2 ring-[var(--brand-turquoise)]" : ""}`}
               >
-                <img src={`/covers/${c}.jpg`} alt={c} className="w-full img-tall" />
+                <img src={`/covers/${c}.webp`} alt={c} className="w-full img-tall" />
               </button>
             ))}
           </div>
@@ -192,7 +192,7 @@ export default function CreeazaCarteaPersonalizare() {
         {/* Tipărit */}
         <label className="inline-flex items-center gap-2">
           <input type="checkbox" checked={wantPrinted} onChange={(e)=>setWantPrinted(e.target.checked)} className="input-chk"/>
-          <span>Vreau și varianta tipărită (+50 RON) + transport (+15 RON)</span>
+          <span>Vreau și varianta tipărită (+50 RON) + transport</span>
         </label>
 
         {/* Mesaj opțional */}

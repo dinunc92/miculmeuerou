@@ -1,4 +1,6 @@
+// app/product/[slug]/page.tsx
 "use client";
+
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { bySlug } from "@/data/products";
@@ -18,22 +20,19 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
   );
 
   const previews = [
-    `/previews/${product.slug}/p1.jpg`,
-    `/previews/${product.slug}/p2.jpg`,
-    `/previews/${product.slug}/p3.jpg`,
-    `/previews/${product.slug}/p4.jpg`,
+    `/previews/${product.slug}/p1.webp`,
+    `/previews/${product.slug}/p2.webp`,
+    `/previews/${product.slug}/p3.webp`,
+    `/previews/${product.slug}/p4.webp`,
   ];
+  const images = [product.image, ...previews];
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-10">
       <div className="grid md:grid-cols-2 gap-8">
-        {/* STÂNGA: copertă + galerie carousel */}
+        {/* STÂNGA: Carousel (contain pentru copertă A4) */}
         <div>
-          <img src={product.image} alt={product.title} className="img-cover" />
-          <div className="mt-3">
-            <Carousel images={previews} height={210} slideWidth={200} />
-          </div>
-
+          <Carousel images={images} height={520} fit="contain" />
           <div className="mt-3 price text-xl">{product.priceRON} RON</div>
 
           {/* Insigne ajutătoare */}
@@ -61,6 +60,11 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
                 </span>
               </>
             )}
+            {product.pages ? (
+              <span className="px-2 py-1 rounded-full bg-white text-gray-700 border border-gray-200">
+                {product.pages} pagini
+              </span>
+            ) : null}
           </div>
         </div>
 

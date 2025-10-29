@@ -8,8 +8,8 @@ const ROOT = process.cwd();
 
 const INPUT_DIRS = [
   "public/previews",  // /previews/<slug>/p1.jpg...
-  "public/covers",    // /covers/<slug>.jpg...
-  "public/reviews"    // /reviews/*.jpg
+  "public/covers",    // /covers/<slug>.webp...
+  "public/reviews"    // /reviews/*.webp
 ].map(p => path.join(ROOT, p));
 
 const OUT_DIR = path.join(ROOT, "public/_optimized"); // output separat (nu-ți stric originalele)
@@ -27,7 +27,7 @@ async function* walk(dir) {
 }
 
 function outPath(file, size) {
-  // exemplu: public/previews/slug/p1.jpg -> public/_optimized/previews/slug/p1@1200.webp
+  // exemplu: public/previews/slug/p1.webp -> public/_optimized/previews/slug/p1@1200.webp
   const rel = path.relative(path.join(ROOT, "public"), file).replace(/\\/g, "/");
   const extLess = rel.replace(/\.[a-zA-Z0-9]+$/, "");
   return path.join(OUT_DIR, `${extLess}@${size}.webp`);

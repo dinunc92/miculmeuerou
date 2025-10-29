@@ -30,7 +30,7 @@ export default function CarouselCover({ images, height = 260, className = "" }: 
       <img
         src={images[idx]}
         alt={`preview ${idx + 1}`}
-        className="w-full h-full object-cover"
+        className="w-full h-full object-contain rounded-20xl"
         draggable={false}
       />
       <button

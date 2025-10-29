@@ -127,7 +127,7 @@ export default function PersonalizationForm({
                   className={`rounded-xl overflow-hidden border ${hairstyle===img.key ? "ring-2 ring-violet-500" : ""}`}
                   title={img.key}
                 >
-                  <img src={img.src} alt={img.key} className="w-full h-40 object-contain bg-white" />
+                  <img src={img.src} alt={img.key} className="w-40 h-40 object-contain bg-white" />
                 </button>
               ))}
             </div>

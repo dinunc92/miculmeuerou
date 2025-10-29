@@ -1,67 +1,78 @@
+// app/page.tsx
 import Image from "next/image";
 import Reviews from "@/components/Reviews";
-import ImpressionsCarousel  from "@/components/ImpressionsCarousel";
+import Gallery  from "@/components/Gallery";
 import ProductCard from "@/components/ProductCard";
 import { products } from "@/data/products";
 
-const fise = products.filter((p) => p.type === "fise");
-const cartiAvatar = products.filter((p) => p.type === "carte");
-const cartiFoto = products.filter((p) => p.type === "carte-custom");
+const fise       = products.filter((p) => p.type === "fise");
+const cartiAvatar= products.filter((p) => p.type === "carte");
+const cartiFoto  = products.filter((p) => p.type === "carte-custom");
 
 export default function HomePage() {
+  const fise3       = fise.slice(0, 3);
+  const carti3      = cartiAvatar.slice(0, 3);
+  const cartiFoto3  = cartiFoto.slice(0, 3);
+
   return (
     <main>
       {/* HERO */}
-      <section className="bg-gradient-to-r from-[var(--brand-turquoise)] to-[var(--brand-lilac)] text-white py-12">
-        <div className="max-w-6xl mx-auto px-4 flex flex-col md:flex-row items-center gap-6">
+      <section
+        className="relative text-white py-20 md:py-28 overflow-hidden"
+        style={{
+          backgroundImage: "url('/hero-cover.png')", // imaginea ta full-width
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
+        <div className="absolute inset-0 bg-black/0"></div> {/* overlay subtil */}
+        <div className="relative z-10 max-w-6xl mx-auto px-4 flex flex-col md:flex-row items-center gap-6">
           <div className="flex-1 text-center md:text-left">
-            <h1 className="text-4xl font-extrabold leading-tight mb-4">
-              Copilul tău devine <br /> eroul propriei povești!
+            <h1 className="text-4xl font-extrabold mb-2">
+              Copilul tău devine eroul propriei povești!
             </h1>
-            <p className="text-lg font-light mb-6">
+            <p className="text-lg font-light mb-8">
               Creează fișe educative și cărți personalizate cu avatarul sau fotografia copilului tău.
             </p>
-            <div className="grid sm:grid-cols-3 gap-4">
-              <a className="home-cta" href="/fise">Fișe educative</a>
-              <a className="home-cta" href="/carti">Cărți cu avatarul copilului</a>
-              <a className="home-cta" href="/creeaza-carte">Cărți cu fotografia copilului</a>
+            <div className="grid sm:grid-cols-6 gap-4">
+              <a className="home-cta bg-teal-500 text-gray-900" href="/fise">📄 Fișe educative</a>
+              <a className="home-cta bg-teal-500 text-gray-900" href="/carti">📚 Cărți cu avatarul copilului</a>
+              <a className="home-cta bg-teal-500 text-gray-900" href="/creeaza-carte">📸 Cărți cu fotografia copilului</a>
             </div>
-          </div>
-
-          <div className="flex-1 flex justify-center">
-            <Image
-              src="/hero-cover.png"
-              alt="Copil citind cartea personalizată"
-              width={300}
-              height={300}
-              className="rounded-2xl shadow-lg"
-              priority
-            />
           </div>
         </div>
       </section>
 
       {/* Cărți cu avatar */}
       <section className="max-w-6xl mx-auto px-4 py-10">
-        <h2 className="text-2xl font-bold mb-6 text-gray-900">Cărți cu avatarul copilului</h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-gray-900">📚 Cărți cu avatarul copilului</h2>
+          <a href="/carti" className="btn-soft">Vezi mai multe →</a>
+        </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {cartiAvatar.map((p) => <ProductCard key={p.id} p={p} />)}
+          {carti3.map((p) => <ProductCard key={p.id} p={p} />)}
         </div>
       </section>
 
       {/* Fișe */}
       <section className="max-w-6xl mx-auto px-4 py-6">
-        <h2 className="text-2xl font-bold mb-6 text-gray-900">Fișe educative</h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-gray-900">📄 Fișe educative</h2>
+          <a href="/fise" className="btn-soft">Vezi mai multe →</a>
+        </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {fise.map((p) => <ProductCard key={p.id} p={p} />)}
+          {fise3.map((p) => <ProductCard key={p.id} p={p} />)}
         </div>
       </section>
 
-      {/* Cărți cu fotografia copilului */}
+      {/* Cărți cu fotografia copilului (cele 15 din catalog; aici doar 3) */}
       <section className="max-w-6xl mx-auto px-4 py-6">
-        <h2 className="text-2xl font-bold mb-6 text-gray-900">Cărți cu fotografia copilului</h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-gray-900">📸 Cărți cu fotografia copilului</h2>
+          <a href="/carti-foto" className="btn-soft">Vezi mai multe →</a>
+        </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {cartiFoto.map((p) => <ProductCard key={p.id} p={p} />)}
+          {cartiFoto3.map((p) => <ProductCard key={p.id} p={p} />)}
         </div>
       </section>
 
@@ -87,7 +98,7 @@ export default function HomePage() {
 
       {/* Recenzii + galerie impresii */}
       <Reviews />
-      <ImpressionsCarousel />
+      <Gallery />
     </main>
   );
 }

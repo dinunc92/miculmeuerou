@@ -16,7 +16,7 @@ const REVIEWS: Review[] = [
     name: "Mădălina P.",
     text:
       "Cartea personalizată a fost surpriza serii. Copilul a fost foarte încântat când și-a văzut numele în poveste.",
-    photo: "/reviews/r1.jpg",
+    photo: "/reviews/r1.webp",
     icons: [<IconStar key="s" />, <IconGift key="g" />, <IconSmile key="sm" />],
   },
   {
@@ -24,7 +24,7 @@ const REVIEWS: Review[] = [
     name: "Andrei C.",
     text:
       "Fișele au venit imediat pe email după plată. Sunt clare și colorate, perfecte pentru vârsta lui.",
-    photo: "/reviews/r2.jpg",
+    photo: "/reviews/r2.webp",
     icons: [<IconClock key="c" />, <IconBook key="b" />, <IconStar key="s" />],
   },
   {
@@ -32,7 +32,7 @@ const REVIEWS: Review[] = [
     name: "Elena D.",
     text:
       "Am ales și varianta tipărită. A ajuns în 6 zile și arată foarte bine. Paginile din carte sunt cartonate, coperta lucioasa, exact cum ne-ați spus.",
-    photo: "/reviews/r3.jpg",
+    photo: "/reviews/r3.webp",
     icons: [<IconShield key="sh" />, <IconStar key="s" />, <IconGift key="g" />],
   },
   // noi (natural, fără neologisme)
@@ -41,7 +41,7 @@ const REVIEWS: Review[] = [
     name: "Daniela R.",
     text:
       "Ne-a plăcut că am putut personaliza numele și detaliile din poveste. E o amintire frumoasă pentru noi.",
-    photo: "/reviews/r4.jpg",
+    photo: "/reviews/r4.webp",
     icons: [<IconStar key="s" />, <IconSmile key="sm" />],
   },
   {
@@ -49,7 +49,7 @@ const REVIEWS: Review[] = [
     name: "Marius L.",
     text:
       "Proces simplu și rapid. Fișele sunt bine gândite, îl țin ocupat și învață prin joacă.",
-    photo: "/reviews/r5.jpg",
+    photo: "/reviews/r5.webp",
     icons: [<IconBook key="b" />, <IconClock key="c" />],
   },
   {
@@ -57,7 +57,7 @@ const REVIEWS: Review[] = [
     name: "Georgiana S.",
     text:
       "Recomand! Am primit PDF-ul pe email și totul a fost clar. O să revenim și pentru alte povești.",
-    photo: "/reviews/r6.jpg",
+    photo: "/reviews/r6.webp",
     icons: [<IconStar key="s" />, <IconGift key="g" />],
   },
 ];

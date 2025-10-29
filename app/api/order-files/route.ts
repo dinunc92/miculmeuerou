@@ -2,43 +2,41 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-type ItemDTO = {
-  id: string;
-  title: string;
-  productId: string;
-  type: "fise" | "carte" | "carte-custom";
-  childName: string | null;
-};
-
-// tip local pentru ce ne întoarce Prisma pe order.items (ajustabil dacă ai alte câmpuri)
-type DbOrderItem = {
-  id: string;
-  title: string;
-  productId: string;
-  type: string;
-  childName: string | null;
-};
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   const sid = req.nextUrl.searchParams.get("sid") || "";
   if (!sid) return NextResponse.json({ items: [] });
 
   const order = await prisma.order.findUnique({
-    where: { paymentId: sid }, // sau stripeSessionId, după schema ta
+    where: { paymentId: sid },
     include: { items: true },
   });
-
   if (!order) return NextResponse.json({ items: [] });
 
-  const items: ItemDTO[] = (order.items as unknown as DbOrderItem[]).map(
-    (i: DbOrderItem): ItemDTO => ({
+const items = order.items
+  .filter((i:any) => i.productType !== "carte-custom")
+  .map((i: any) => {
+    const t = (i.productType === "fise" ? "fise" : "carte") as "fise" | "carte";
+    const n = i.customization?.childName || "Edy";
+    const link = `/api/download?p=${encodeURIComponent(i.productId)}&t=${t}&n=${encodeURIComponent(n)}&title=${encodeURIComponent(i.title)}`;
+
+    // titlu frumos:
+    const niceTitle = t === "fise"
+      ? `Fișe educative pentru ${n}`
+      : String(i.title || "").replace("[NumeCopil]", n);
+
+    return {
       id: i.id,
-      title: i.title,
+      title: niceTitle,
       productId: i.productId,
-      type: (i.type as "fise" | "carte" | "carte-custom"),
-      childName: i.childName,
-    })
-  );
+      type: t,
+      childName: n,
+      url: link,
+    };
+  });
+
 
   return NextResponse.json({ items });
 }

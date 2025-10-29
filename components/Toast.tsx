@@ -1,42 +1,50 @@
-// components/Toast.tsx
 "use client";
+
 import { useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import clsx from "clsx";
 
-type ToastProps = {
+type Kind = "info" | "success" | "error";
+
+export default function Toast({
+  text,
+  kind = "info",
+  onClose,
+  autoHideMs = 1800,
+}: {
   text: string;
-  kind?: "info" | "success" | "error";
-  duration?: number;
+  kind?: Kind;
   onClose?: () => void;
-};
-
-// culori pastelate brand (turcoaz/lila)
-const bgByKind: Record<NonNullable<ToastProps["kind"]>, string> = {
-  info:    "bg-gradient-to-r from-[#6f42c1] to-[#2ec4b6] text-white", // mov→turcoaz
-  success: "bg-gradient-to-r from-emerald-500 to-teal-400 text-white",
-  error:   "bg-gradient-to-r from-rose-500 to-pink-400 text-white",
-};
-
-export default function Toast({ text, kind = "info", duration = 1800, onClose }: ToastProps) {
+  autoHideMs?: number;
+}) {
   useEffect(() => {
-    if (!duration) return;
-    const t = setTimeout(() => onClose?.(), duration);
+    if (!autoHideMs) return;
+    const t = setTimeout(() => onClose?.(), autoHideMs);
     return () => clearTimeout(t);
-  }, [duration, onClose]);
+  }, [autoHideMs, onClose]);
 
   return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0, y: 15, scale: 0.97 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: 10, scale: 0.97 }}
-        transition={{ type: "spring", stiffness: 260, damping: 20 }}
-        className={`fixed bottom-6 right-6 z-50 shadow-2xl rounded-2xl px-5 py-3 border border-white/20 ${bgByKind[kind]}`}
-        role="alert"
-        aria-live="polite"
+    <div
+      role="status"
+      aria-live="polite"
+      className={clsx(
+        "fixed right-4 bottom-4 z-50 rounded-xl shadow-xl px-4 py-3 text-sm font-semibold flex items-center gap-3",
+        "backdrop-blur",
+        kind === "info" && "bg-[rgba(48,213,200,0.95)] text-white",
+        kind === "success" && "bg-[rgba(41,197,164,0.95)] text-white",
+        kind === "error" && "bg-[rgba(217,70,70,0.95)] text-white"
+      )}
+    >
+      <span>
+        {kind === "success" ? "✅ " : kind === "error" ? "⚠️ " : "💡 "}
+        {text}
+      </span>
+      <button
+        aria-label="Închide notificarea"
+        onClick={onClose}
+        className="ml-1 inline-flex items-center justify-center w-7 h-7 rounded-md bg-white/20 hover:bg-white/30"
       >
-        <div className="text-sm font-semibold tracking-wide">{text}</div>
-      </motion.div>
-    </AnimatePresence>
+        ✕
+      </button>
+    </div>
   );
 }

@@ -1,4 +1,3 @@
-// prisma/schema.prisma
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,40 +7,69 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum OrderStatus {
+  received
+  emailed
+  email_failed
+  printed
+  delivered
+}
+
 model Order {
-  id           String       @id @default(cuid())
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  email        String
-  totalRON     Int
-  paymentId    String?      @unique   // <— adaugă @unique
-  status       String       @default("pending")
-  items        OrderItem[]
+  id              String      @id @default(cuid())
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  // Stripe
+  paymentId       String      @unique
+  email           String      // <-- email client (unic la nivel de comandă)
+
+  // Nr. comandă incremental (000001 etc.)
+  orderNumber     Int         @default(0)
+  status          OrderStatus @default(received)
+
+  // Total (RON, informativ)
+  totalRON        Int         @default(0)
+
+  // Adresă & telefon (dacă e tipărire)
+  shippingAddress String?
+  shippingPhone   String?
+
+  hasPrinted      Boolean     @default(false)
+
+  items           OrderItem[]
+  emailLogs       EmailLog[]
 }
 
 model OrderItem {
-  id           String     @id @default(cuid())
+  id           String   @id @default(cuid())
+  createdAt    DateTime @default(now())
+
+  order        Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   orderId      String
-  order        Order      @relation(fields: [orderId], references: [id])
+
   productId    String
   productType  String
   title        String
   priceRON     Int
-  customization Json
+  customization Json?
 }
 
 model EmailLog {
-  id          String   @id @default(cuid())
-  to          String
-  subject     String
-  sentAt      DateTime @default(now())
-  success     Boolean
-  error       String?
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId   String
+
+  to        String
+  subject   String
+  success   Boolean
+  error     String?
 }
 
 model CustomAsset {
-  id         String   @id @default(cuid())
-  token      String   @unique
+  token      String   @id
   mime       String
   dataBase64 String
   createdAt  DateTime @default(now())

@@ -1,21 +1,49 @@
 // app/api/download/route.ts
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { byId } from "@/data/products";
+import { fillPdfFormAndBase64 } from "@/utils/pdf-form";
 
-export async function POST(req: NextRequest) {
-  // exemplu: primești un Base64 și îl trimiți ca download
-  const { filename, base64 } = await req.json();
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
-  // Base64 -> Uint8Array
-  const bin = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
-  // Uint8Array -> ArrayBuffer (slice safe)
-  const ab = bin.buffer.slice(bin.byteOffset, bin.byteOffset + bin.byteLength);
+export async function GET(req: NextRequest) {
+  try {
+    const itemId = req.nextUrl.searchParams.get("item");
+    if (!itemId) return NextResponse.json({ error: "missing item" }, { status: 400 });
 
-  return new Response(ab, {
-    status: 200,
-    headers: {
-      "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="${filename || "fisier.pdf"}"`,
-      "Cache-Control": "no-store",
-    },
-  });
+    const item = await prisma.orderItem.findUnique({ where: { id: itemId } });
+    if (!item) return NextResponse.json({ error: "not found" }, { status: 404 });
+
+    if (!(item.productType === "fise" || item.productType === "carte")) {
+      return NextResponse.json({ error: "not downloadable" }, { status: 400 });
+    }
+
+    const catalog = byId(item.productId);
+    if (!catalog) return NextResponse.json({ error: "unknown product" }, { status: 404 });
+
+    const childName = ((item.customization as any)?.childName as string | undefined) || "Edy";
+
+    const { filename, contentBase64 } = await fillPdfFormAndBase64({
+      slug: catalog.slug,
+      type: catalog.type as "carte" | "fise",
+      childName,
+      fileTitle: catalog.title,
+    });
+
+    const buf = Buffer.from(contentBase64, "base64");
+    const bytes = new Uint8Array(buf);
+
+    return new NextResponse(bytes, {
+      status: 200,
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="${filename}"`,
+        "Cache-Control": "no-store",
+      },
+    });
+  } catch (e: any) {
+    console.error("download error:", e?.message || e);
+    return NextResponse.json({ error: e?.message || "download error" }, { status: 500 });
+  }
 }

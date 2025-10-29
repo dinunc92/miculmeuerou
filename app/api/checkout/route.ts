@@ -1,121 +1,156 @@
-// app/api/checkout/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
+
+const PRICE = {
+  SHIPPING_FEE: 15,
+};
+
+type CartCustomization = {
+  childName?: string;
+  gender?: "boy" | "girl";
+  eyeColor?: "green" | "brown" | "blue";
+  hairstyle?: string;
+  wantPrinted?: boolean;
+
+  // creeaza-carte (foto)
+  age?: number;
+  relation?: "mama" | "tata" | "bunica" | "bunic";
+  relationName?: string;
+  coverId?: string;
+  selectionTitle?: string;
+  token?: string;
+  // scoatem parentEmail/parentMessage din produs — email vine din checkout
+  parentMessage?: string; // dacă o mai trimiți din personalizare, îl poți păstra aici
+};
+
+type CartItem = {
+  productId: string;
+  productType: "fise" | "carte" | "carte-custom";
+  title: string;
+  priceRON: number;
+  quantity?: number;
+  customization?: CartCustomization;
+};
+
+type ShippingAddress = {
+  name?: string;
+  phone?: string;
+  street?: string;
+  city?: string;
+  zip?: string;
+};
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2024-04-10" });
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: "2024-04-10",
+});
 
-type BodyItem = {
-  productId: string;
-  productType: "carte" | "fise" | "carte-custom";
-  title: string;
-  priceRON: number;
-  quantity?: number;
-  customization?: {
-    childName?: string;
-    gender?: "boy"|"girl";
-    eyeColor?: "green"|"brown"|"blue";
-    hairstyle?: string;
-    wantPrinted?: boolean;
-    token?: string;
-    selectedTitleId?: string;
-    selectedTitle?: string;
-    age?: number;
-    relation?: string;
-    relationName?: string;
-    coverId?: string;
-    parentEmail?: string;
-    message?: string;
-  };
-};
-
-function displayTitleFromPlaceholder(title: string, name: string){
-  if (!title) return title;
-  return title.replace(/\[NumeCopil\]/g, name || "Edy");
+function stripeNameFromTitle(title: string, childName?: string) {
+  return (title || "").replace(/\[NumeCopil\]/g, childName || "Edy");
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const items: BodyItem[] = Array.isArray(body.items) ? body.items : [];
+    const { items = [], email = "", shipping = {} } = (await req.json()) as {
+      items: CartItem[];
+      email?: string;
+      shipping?: ShippingAddress;
+    };
 
-    if (!items.length) {
+    if (!Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: "Coșul este gol." }, { status: 400 });
     }
 
-    const site = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+    const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
+    let anyPrinted = false;
+    let computedTotal = 0;
 
-    // detectăm dacă trebuie transport (o singură dată per comanda)
-    const needsShipping = items.some((it) => it.customization?.wantPrinted === true);
+    for (const item of items) {
+      const qty = Math.max(1, item.quantity || 1);
+      const unitRON = Math.round(item.priceRON);
 
-    // mapează produsele în line_items Stripe
-    const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = items.map((it) => {
-      const qty = it.quantity && it.quantity > 0 ? it.quantity : 1;
-      const childName = it.customization?.childName || "Edy";
-
-      // Produs (nume pentru Stripe)
-      const stripeTitle = displayTitleFromPlaceholder(it.title || "Produs", childName);
-
-      // Metadata bogat (webhook-ul o să le citească)
-      const metadata: Record<string, string> = {
-        t: it.productType,      // tip: fise / carte / carte-custom
-        p: it.productId,        // id produs din catalog
-        n: childName,           // nume copil
+      const md: Record<string, string> = {
+        t: item.productType,
+        p: item.productId,
+        n: item.customization?.childName || "",
+        g: item.customization?.gender || "",
+        e: item.customization?.eyeColor || "",
+        h: item.customization?.hairstyle || "",
+        wp: item.customization?.wantPrinted ? "1" : "0",
+        tk: item.customization?.token || "",
+        st: item.customization?.selectionTitle || "",
+        cv: item.customization?.coverId || "",
+        age: item.customization?.age ? String(item.customization.age) : "",
+        rel: item.customization?.relation || "",
+        reln: item.customization?.relationName || "",
+        pm: item.customization?.parentMessage || "",
       };
-      if (it.customization?.gender)        metadata.g = it.customization.gender;
-      if (it.customization?.eyeColor)      metadata.e = it.customization.eyeColor;
-      if (it.customization?.hairstyle)     metadata.h  = it.customization.h;
-      if (it.customization?.wantPrinted)   metadata.wp = "1";
-      if (it.customization?.token)         metadata.tk = it.customization.token;
-      if (it.customization?.selectedTitle) metadata.st = it.customization.selectedTitle;
-      if (it.customization?.selectedTitleId) metadata.sti = it.customization.selectedTitleId;
-      if (typeof it.customization?.age === "number") metadata.age = String(it.customization.age);
-      if (it.customization?.relation)      metadata.rel = it.customization.relation;
-      if (it.customization?.relationName)  metadata.reln = it.customization.relationName;
-      if (it.customization?.coverId)       metadata.cv = it.customization.coverId;
 
-      return {
+      const nameForStripe = stripeNameFromTitle(item.title, item.customization?.childName);
+
+      line_items.push({
         quantity: qty,
         price_data: {
           currency: "ron",
-          unit_amount: Math.round((it.priceRON || 0) * 100),
+          unit_amount: unitRON * 100,
           product_data: {
-            name: stripeTitle,
-            metadata,
+            name: nameForStripe,
+            metadata: md,
           },
         },
-      };
-    });
+      });
 
-    // linie transport o singură dată (dacă e cazul)
-    if (needsShipping) {
+      computedTotal += unitRON * qty;
+      if (item.customization?.wantPrinted) anyPrinted = true;
+    }
+
+    if (anyPrinted) {
       line_items.push({
         quantity: 1,
         price_data: {
           currency: "ron",
-          unit_amount: 15 * 100,
-          product_data: {
-            name: "Transport",
-            metadata: { t: "shipping" },
-          },
+          unit_amount: PRICE.SHIPPING_FEE * 100,
+          product_data: { name: "Transport", metadata: { t: "shipping" } },
         },
       });
+      computedTotal += PRICE.SHIPPING_FEE;
     }
+
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+
+    const mdShipping: Record<string, string> = anyPrinted
+      ? {
+          s_name: (shipping.name || "").slice(0, 70),
+          s_phone: (shipping.phone || "").slice(0, 30),
+          s_street: (shipping.street || "").slice(0, 120),
+          s_city: (shipping.city || "").slice(0, 60),
+          s_zip: (shipping.zip || "").slice(0, 20),
+        }
+      : {};
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       payment_method_types: ["card"],
-      allow_promotion_codes: false,  // <— elimină promo codes
+      allow_promotion_codes: false,
       line_items,
-      success_url: `${site}/success?sid={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${site}/cart`,
+      success_url: `${siteUrl}/success?sid={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${siteUrl}/cart`,
+      // trimitem email la Stripe (va primi și receipt de la Stripe dacă e activ)
+      customer_email: email || undefined,
+      shipping_address_collection: undefined,
+      metadata: {
+        ...mdShipping,
+        has_print: anyPrinted ? "1" : "0",
+        total_ron: String(computedTotal),
+        pe: (email || "").slice(0, 80), // email client la nivel de sesiune
+      },
     });
 
     return NextResponse.json({ url: session.url });
-  } catch (e:any) {
+  } catch (e: any) {
     console.error("checkout error:", e?.message || e);
-    return NextResponse.json({ error: e?.message || "Eroare creare sesiune" }, { status: 500 });
+    return NextResponse.json({ error: e?.message || "Checkout error" }, { status: 500 });
   }
 }

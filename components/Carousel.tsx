@@ -1,98 +1,93 @@
+// components/Carousel.tsx
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
-import clsx from "clsx";
+
+import { useEffect, useRef, useState } from "react";
 
 type Props = {
-  images: string[];             // sursele imaginilor
-  height?: number;              // înălțime slide (default 210)
-  slideWidth?: number;          // lățime slide (default 150)
-  rounded?: boolean;            // colțuri rotunjite
-  className?: string;           // extra clase container
-  ariaLabel?: string;           // accesibilitate
-  /** cum încape imaginea în slide: "cover" sau "contain" */
-  aspect?: "cover" | "contain"; // default "cover"
+  images: string[];
+  height?: number;          // px
+  slideWidth?: number;      // px (doar pentru carusel mic, dacă vrei)
+  fit?: "cover" | "contain"; // cum încape imaginea (default: cover)
 };
 
 export default function Carousel({
   images,
-  height = 210,
-  slideWidth = 150,
-  rounded = true,
-  className,
-  ariaLabel = "Galerie imagini",
-  aspect = "cover",
+  height = 260,
+  slideWidth,
+  fit = "contain",
 }: Props) {
-  const wrapRef = useRef<HTMLDivElement | null>(null);
-  const [atStart, setAtStart] = useState(true);
-  const [atEnd, setAtEnd] = useState(false);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [index, setIndex] = useState(0);
 
-  const slides = useMemo(() => images.filter(Boolean), [images]);
+  const prev = () => setIndex((i) => Math.max(0, i - 1));
+  const next = () => setIndex((i) => Math.min(images.length - 1, i + 1));
 
   useEffect(() => {
-    const el = wrapRef.current;
+    const el = trackRef.current;
     if (!el) return;
-    const onScroll = () => {
-      const { scrollLeft, scrollWidth, clientWidth } = el;
-      setAtStart(scrollLeft <= 2);
-      setAtEnd(scrollLeft + clientWidth >= scrollWidth - 2);
-    };
-    onScroll();
-    el.addEventListener("scroll", onScroll, { passive: true });
-    return () => el.removeEventListener("scroll", onScroll);
-  }, [slides.length]);
+    const w = slideWidth || el.clientWidth;
+    el.scrollTo({ left: index * w, behavior: "smooth" });
+  }, [index, slideWidth]);
 
-  const scrollBy = (dir: "left" | "right") => {
-    const el = wrapRef.current;
-    if (!el) return;
-    const delta = dir === "left" ? -el.clientWidth : el.clientWidth;
-    el.scrollBy({ left: delta, behavior: "smooth" });
-  };
-
-  const onKey = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === "ArrowLeft") scrollBy("left");
-    if (e.key === "ArrowRight") scrollBy("right");
-  };
+  const canPrev = index > 0;
+  const canNext = index < images.length - 1;
 
   return (
-    <div className={clsx("relative", className)} onKeyDown={onKey} aria-label={ariaLabel}>
-      <div ref={wrapRef} className="snap-gallery" style={{ scrollSnapType: "x mandatory" }}>
-        {slides.map((src, i) => (
+    <div className="relative">
+      {/* track */}
+      <div
+        ref={trackRef}
+        className="overflow-hidden w-full"
+        style={{
+          height,
+          scrollSnapType: "x mandatory",
+          display: "flex",
+        }}
+      >
+        {images.map((src, i) => (
           <div
             key={i}
-            className="snap-slide"
+            className="shrink-0"
             style={{
-              width: `${slideWidth}px`,
-              borderRadius: rounded ? "0.75rem" : 0,
+              width: slideWidth ? `${slideWidth}px` : "100%",
+              height,
+              scrollSnapAlign: "start",
+              position: "relative",
+              borderRadius: 16,
+              overflow: "hidden",
+              background: "#fff",
+              border: "1px solid rgba(0,0,0,.06)",
+              marginRight: 10,
             }}
           >
             <img
               src={src}
-              alt={`prev ${i + 1}`}
-              className="snap-img"
+              alt={`img-${i}`}
               style={{
-                height: `${height}px`,
-                objectFit: aspect,
-                background: aspect === "contain" ? "#fff" : undefined,
+                width: "100%",
+                height: "100%",
+                objectFit: fit,
+                display: "block",
               }}
-              draggable={false}
             />
           </div>
         ))}
       </div>
 
+      {/* arrows */}
       <button
+        aria-label="Prev"
+        className={`snap-arrow left ${!canPrev ? "disabled" : ""}`}
+        onClick={prev}
         type="button"
-        className={clsx("snap-arrow left", atStart && "disabled")}
-        onClick={(e) => { e.preventDefault(); e.stopPropagation(); scrollBy("left"); }}
-        aria-label="precedent"
       >
         ‹
       </button>
       <button
+        aria-label="Next"
+        className={`snap-arrow right ${!canNext ? "disabled" : ""}`}
+        onClick={next}
         type="button"
-        className={clsx("snap-arrow right", atEnd && "disabled")}
-        onClick={(e) => { e.preventDefault(); e.stopPropagation(); scrollBy("right"); }}
-        aria-label="următor"
       >
         ›
       </button>

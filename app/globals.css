@@ -104,7 +104,7 @@ a:hover{ text-decoration:underline; filter:brightness(1.02); }
 .btn-cta:hover, .btn-cta:focus{
   transform:translateY(-1px); filter:brightness(1.05);
   box-shadow:0 10px 22px rgba(0,0,0,.16);
-  text-decoration:none; color:#fff;
+  text-decoration:none; color:#131212;
 }
 
 /* Outline („Vezi detalii”) */
@@ -150,7 +150,7 @@ a:hover{ text-decoration:underline; filter:brightness(1.02); }
 .home-cta{
   display:inline-flex; align-items:center; justify-content:center;
   padding:.7rem 1rem; border-radius:1rem;
-  background:linear-gradient(180deg,#ede7ff,#f6f1ff);
+  background:linear-gradient(180deg,#5a9cc8,#f6f1ff);
   border:1px solid #d9c9ff; color:#5b2bbf; font-weight:700;
   box-shadow:0 4px 14px rgba(91,43,191,.10);
   transition:transform .12s ease, box-shadow .2s ease, background .2s ease;
